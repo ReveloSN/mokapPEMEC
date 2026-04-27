@@ -1,193 +1,517 @@
-import React, { useMemo, useState } from "react";
+import React, { startTransition, useDeferredValue, useMemo, useState } from "react";
 import {
-  Search,
-  Bell,
-  User,
-  FileText,
-  LayoutDashboard,
-  Users,
-  FolderOpen,
-  AlertTriangle as TriangleAlert,
-  BarChart3 as ChartColumn,
-  FileOutput,
-  ClipboardList,
-  SlidersHorizontal,
-  Brain,
   Activity,
-  Map,
-  ShieldCheck,
-  Settings,
-  BookOpen,
-  Upload,
-  Plus,
+  AlertTriangle as TriangleAlert,
   ArrowRight,
-  Sparkles,
+  BarChart3 as ChartColumn,
+  Bell,
+  CalendarDays,
+  CheckCircle2,
+  ChevronRight,
+  ClipboardList,
   Download,
   Eye,
+  FileOutput,
+  FileText,
   Filter,
-  CalendarDays,
-  HeartPulse,
-  Stethoscope,
   Gauge,
-  Flame,
-  ChevronRight,
-  CheckCircle2,
+  HeartPulse,
+  LayoutDashboard,
+  Map,
+  Plus,
+  Search,
+  Settings,
+  ShieldCheck,
+  SlidersHorizontal,
+  Upload,
+  User,
+  Users,
+  Brain,
 } from "lucide-react";
 
-const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const monthLabels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const dashboardWeekLabels = ["SE 37", "SE 38", "SE 39", "SE 40", "SE 41", "SE 42"];
 
-const diseases = [
-  "Diabetes T2",
-  "Hipertensión",
-  "EPOC",
-  "Insuf. Renal",
-  "Enf. Cardiovasc.",
-  "Asma Crónica",
-  "Hipotiroidismo",
-  "Enf. Cerebrovasc.",
+const eventCatalog = [
   "Falla cardiaca",
+  "Diabetes T2",
+  "Hipertension",
+  "EPOC",
+  "Insuficiencia renal",
+  "Asma",
 ];
 
 const departments = [
-  { n: "La Guajira", c: 287 }, { n: "Cesar", c: 412 }, { n: "N. de Santander", c: 589 },
-  { n: "Arauca", c: 156 }, { n: "Atlántico", c: 1243 }, { n: "Magdalena", c: 378 },
-  { n: "Santander", c: 712 }, { n: "Sucre", c: 298 }, { n: "Bolívar", c: 534 },
-  { n: "Boyacá", c: 467 }, { n: "Casanare", c: 178 }, { n: "Córdoba", c: 523 },
-  { n: "Antioquia", c: 1892 }, { n: "Cundinamarca", c: 1156 }, { n: "Vichada", c: 67 },
-  { n: "Chocó", c: 198 }, { n: "Caldas", c: 423 }, { n: "Bogotá D.C.", c: 3456 },
-  { n: "Guainía", c: 34 }, { n: "Risaralda", c: 312 }, { n: "Meta", c: 389 },
-  { n: "Vaupés", c: 23 }, { n: "Quindío", c: 234 }, { n: "Huila", c: 445 },
-  { n: "Guaviare", c: 45 }, { n: "Tolima", c: 512 }, { n: "Caquetá", c: 201 },
-  { n: "Amazonas", c: 28 }, { n: "Valle del Cauca", c: 1567 }, { n: "Putumayo", c: 134 },
-  { n: "Cauca", c: 312 }, { n: "Nariño", c: 367 },
+  { n: "La Guajira", c: 287 },
+  { n: "Cesar", c: 412 },
+  { n: "Norte de Santander", c: 589 },
+  { n: "Arauca", c: 156 },
+  { n: "Atlantico", c: 1243 },
+  { n: "Magdalena", c: 378 },
+  { n: "Santander", c: 712 },
+  { n: "Sucre", c: 298 },
+  { n: "Bolivar", c: 534 },
+  { n: "Boyaca", c: 467 },
+  { n: "Casanare", c: 178 },
+  { n: "Cordoba", c: 523 },
+  { n: "Antioquia", c: 1892 },
+  { n: "Cundinamarca", c: 1156 },
+  { n: "Vichada", c: 67 },
+  { n: "Choco", c: 198 },
+  { n: "Caldas", c: 423 },
+  { n: "Bogota D.C.", c: 3456 },
+  { n: "Guainia", c: 34 },
+  { n: "Risaralda", c: 312 },
+  { n: "Meta", c: 389 },
+  { n: "Vaupes", c: 23 },
+  { n: "Quindio", c: 234 },
+  { n: "Huila", c: 445 },
+  { n: "Guaviare", c: 45 },
+  { n: "Tolima", c: 512 },
+  { n: "Caqueta", c: 201 },
+  { n: "Amazonas", c: 28 },
+  { n: "Valle del Cauca", c: 1567 },
+  { n: "Putumayo", c: 134 },
+  { n: "Cauca", c: 312 },
+  { n: "Narino", c: 367 },
 ];
 
-const patientsSeed = [
-  { id: "P-0001", nm: "María Elena González Pérez", doc: "CC 1098765432", ag: 62, sx: "F", dx: "Diabetes T2", dp: "Nariño", mpio: "Pasto", rk: "alto", st: "activo", pe: "semanal", eps: "Sura", imc: 29.4, peso: 72, talla: 156, antecedentes: "Hipertensión arterial familiar", medicacion: "Metformina 850mg, Enalapril 10mg" },
-  { id: "P-0002", nm: "Carlos Andrés Ramírez Silva", doc: "CC 1067823411", ag: 55, sx: "M", dx: "Hipertensión", dp: "Nariño", mpio: "Tumaco", rk: "medio", st: "activo", pe: "semanal", eps: "Nueva EPS", imc: 27.1, peso: 80, talla: 172, antecedentes: "Padre con IAM", medicacion: "Losartán 50mg" },
-  { id: "P-0003", nm: "Ana Lucía Mendoza Coral", doc: "CC 1085443210", ag: 48, sx: "F", dx: "EPOC", dp: "Nariño", mpio: "Ipiales", rk: "alto", st: "activo", pe: "inmediata", eps: "Sanitas", imc: 24.8, peso: 58, talla: 153, antecedentes: "Tabaquismo 20 años", medicacion: "Salbutamol inhalado, Formoterol" },
-  { id: "P-0004", nm: "Jorge Ernesto Castillo Narváez", doc: "CC 1090123456", ag: 71, sx: "M", dx: "Insuf. Renal", dp: "Nariño", mpio: "Pasto", rk: "critico", st: "activo", pe: "inmediata", eps: "Compensar", imc: 22.1, peso: 65, talla: 171, antecedentes: "Diabetes T2 de larga data", medicacion: "Eritropoyetina, Furosemida" },
-  { id: "P-0005", nm: "Patricia Holguín Torres", doc: "CC 1054321098", ag: 59, sx: "F", dx: "Diabetes T2", dp: "Nariño", mpio: "La Unión", rk: "medio", st: "seguimiento", pe: "semanal", eps: "Sura", imc: 31.2, peso: 78, talla: 158, antecedentes: "Obesidad, sedentarismo", medicacion: "Glibenclamida 5mg" },
-  { id: "P-0006", nm: "Roberto Díaz Villota", doc: "CC 1078901234", ag: 67, sx: "M", dx: "Enf. Cardiovasc.", dp: "Nariño", mpio: "Pasto", rk: "alto", st: "activo", pe: "inmediata", eps: "Nueva EPS", imc: 28.7, peso: 82, talla: 169, antecedentes: "IAM previo 2021", medicacion: "Atorvastatina 40mg, AAS 100mg" },
-  { id: "P-0007", nm: "Lucía Fernández Rosero", doc: "CC 1093456789", ag: 43, sx: "F", dx: "Asma Crónica", dp: "Nariño", mpio: "Túquerres", rk: "bajo", st: "control", pe: "quincenal", eps: "Sanitas", imc: 23.4, peso: 55, talla: 153, antecedentes: "Alergia al polvo", medicacion: "Budesonida, Montelukast" },
-  { id: "P-0008", nm: "Miguel Ángel Orozco Benavides", doc: "CC 1045678901", ag: 74, sx: "M", dx: "Falla cardiaca", dp: "Nariño", mpio: "Pasto", rk: "critico", st: "activo", pe: "inmediata", eps: "Compensar", imc: 26.8, peso: 71, talla: 163, antecedentes: "Nefropatía diabética, retinopatía, cardiopatía previa", medicacion: "Diurético, IECA, betabloqueador" },
-  { id: "P-0009", nm: "Sandra Milena Rojas Guerrero", doc: "CC 1066789012", ag: 51, sx: "F", dx: "Hipotiroidismo", dp: "Nariño", mpio: "Samaniego", rk: "bajo", st: "control", pe: "mensual", eps: "Sura", imc: 25.9, peso: 64, talla: 157, antecedentes: "Tiroiditis de Hashimoto", medicacion: "Levotiroxina 100mcg" },
-  { id: "P-0010", nm: "Andrés Felipe Morales Erazo", doc: "CC 1082345678", ag: 38, sx: "M", dx: "Hipertensión", dp: "Nariño", mpio: "Pasto", rk: "medio", st: "activo", pe: "semanal", eps: "Nueva EPS", imc: 29.8, peso: 87, talla: 171, antecedentes: "Estrés laboral crónico", medicacion: "Amlodipino 5mg" },
+const eventNotificationsSeed = [
+  {
+    id: "EV-0001",
+    evento: "Falla cardiaca",
+    semana: "SE 42",
+    territorio: "Pasto, Narino",
+    departamento: "Narino",
+    municipio: "Pasto",
+    casos: 48,
+    variacion: "+22%",
+    comportamiento: "Incremento inusual",
+    alerta: "Alta",
+    unidad: "Hospital Universitario Departamental",
+    fechaNotificacion: "2024-11-15",
+    fechaCorte: "2024-11-15",
+    clasificacion: "Caso confirmado",
+    accion: "Ver analisis",
+    calidad: "96%",
+    sexo: "Masculino",
+    grupoEtario: "65 y mas",
+    aseguramiento: "Contributivo",
+    hallazgos: [
+      "Falla cardiaca presenta aumento del 22% en Pasto frente al promedio de las ultimas 4 semanas.",
+      "La unidad notificadora concentra el mayor volumen del departamento en SE 42.",
+      "Se recomienda revision de consistencia territorial y contraste con el historico inmediato.",
+    ],
+    variables: [
+      ["Casos hospitalizados", "17"],
+      ["Tasa por 100 mil", "31.4"],
+      ["UPGD activas", "8"],
+      ["Completitud", "96%"],
+      ["Retraso promedio", "1.2 dias"],
+    ],
+    validaciones: [
+      { titulo: "Consistencia territorial", detalle: "Territorio y unidad notificadora coinciden con el catalogo departamental.", estado: "Validada", fecha: "2024-11-15 08:42" },
+      { titulo: "Duplicados", detalle: "No se detectan notificaciones duplicadas en la semana epidemiologica 42.", estado: "Validada", fecha: "2024-11-15 08:50" },
+      { titulo: "Variables criticas", detalle: "Casos, clasificacion y fecha de notificacion completos.", estado: "Validada", fecha: "2024-11-15 09:05" },
+      { titulo: "Revision analitica", detalle: "Incremento sobre umbral esperado marcado para revision territorial prioritaria.", estado: "Escalada", fecha: "2024-11-15 09:20" },
+    ],
+  },
+  {
+    id: "EV-0002",
+    evento: "Falla cardiaca",
+    semana: "SE 42",
+    territorio: "Tumaco, Narino",
+    departamento: "Narino",
+    municipio: "Tumaco",
+    casos: 33,
+    variacion: "+15%",
+    comportamiento: "En observacion",
+    alerta: "Media",
+    unidad: "Hospital San Andres de Tumaco",
+    fechaNotificacion: "2024-11-15",
+    fechaCorte: "2024-11-15",
+    clasificacion: "Caso probable",
+    accion: "Ver analisis",
+    calidad: "92%",
+    sexo: "Femenino",
+    grupoEtario: "50 a 64",
+    aseguramiento: "Subsidiado",
+    hallazgos: [
+      "Tumaco concentra el mayor crecimiento relativo del evento piloto en la subregion costera.",
+      "La oportunidad del cargue se mantiene dentro del rango esperado.",
+      "Se prioriza contraste contra promedio departamental para validar comportamiento sostenido.",
+    ],
+    variables: [
+      ["Casos hospitalizados", "11"],
+      ["Tasa por 100 mil", "27.8"],
+      ["UPGD activas", "5"],
+      ["Completitud", "92%"],
+      ["Retraso promedio", "1.8 dias"],
+    ],
+    validaciones: [
+      { titulo: "Territorio", detalle: "Municipio y departamento validados contra maestro institucional.", estado: "Validada", fecha: "2024-11-15 08:20" },
+      { titulo: "Semana epidemiologica", detalle: "La fecha del evento corresponde a SE 42.", estado: "Validada", fecha: "2024-11-15 08:28" },
+      { titulo: "Calidad del dato", detalle: "Dos registros requieren ajuste en variable de clasificacion.", estado: "En revision", fecha: "2024-11-15 09:10" },
+      { titulo: "Revision territorial", detalle: "Territorio incluido en observacion por incremento sostenido.", estado: "Escalada", fecha: "2024-11-15 09:34" },
+    ],
+  },
+  {
+    id: "EV-0003",
+    evento: "Diabetes T2",
+    semana: "SE 42",
+    territorio: "Ipiales, Narino",
+    departamento: "Narino",
+    municipio: "Ipiales",
+    casos: 27,
+    variacion: "+4%",
+    comportamiento: "Estable",
+    alerta: "Baja",
+    unidad: "Hospital Civil de Ipiales",
+    fechaNotificacion: "2024-11-15",
+    fechaCorte: "2024-11-15",
+    clasificacion: "Caso confirmado",
+    accion: "Ver detalle",
+    calidad: "95%",
+    sexo: "Femenino",
+    grupoEtario: "35 a 49",
+    aseguramiento: "Contributivo",
+    hallazgos: [
+      "La variacion se mantiene dentro del rango esperado para el historico inmediato.",
+      "No se observan concentraciones anormales por unidad notificadora.",
+      "Los indicadores de completitud superan la meta institucional.",
+    ],
+    variables: [
+      ["Casos nuevos", "9"],
+      ["Casos recurrentes", "18"],
+      ["Tasa por 100 mil", "18.2"],
+      ["UPGD activas", "6"],
+      ["Completitud", "95%"],
+    ],
+    validaciones: [
+      { titulo: "Duplicados", detalle: "No se detectan registros repetidos.", estado: "Validada", fecha: "2024-11-15 08:12" },
+      { titulo: "Territorio", detalle: "La unidad notificadora pertenece al municipio reportado.", estado: "Validada", fecha: "2024-11-15 08:19" },
+      { titulo: "Clasificacion", detalle: "Clasificacion del caso coherente con variables principales.", estado: "Validada", fecha: "2024-11-15 08:44" },
+    ],
+  },
+  {
+    id: "EV-0004",
+    evento: "Hipertension",
+    semana: "SE 42",
+    territorio: "La Union, Narino",
+    departamento: "Narino",
+    municipio: "La Union",
+    casos: 19,
+    variacion: "-3%",
+    comportamiento: "Esperado",
+    alerta: "Baja",
+    unidad: "Hospital San Jose de La Union",
+    fechaNotificacion: "2024-11-15",
+    fechaCorte: "2024-11-15",
+    clasificacion: "Caso confirmado",
+    accion: "Ver detalle",
+    calidad: "97%",
+    sexo: "Masculino",
+    grupoEtario: "50 a 64",
+    aseguramiento: "Subsidiado",
+    hallazgos: [
+      "El evento se ubica dentro del canal esperado para la semana epidemiologica.",
+      "No se identifican alertas por retraso ni por subregistro.",
+      "La distribucion por unidad notificadora es homogena.",
+    ],
+    variables: [
+      ["Casos nuevos", "5"],
+      ["Casos recurrentes", "14"],
+      ["Tasa por 100 mil", "13.8"],
+      ["UPGD activas", "4"],
+      ["Completitud", "97%"],
+    ],
+    validaciones: [
+      { titulo: "Semana epidemiologica", detalle: "Coherencia temporal confirmada.", estado: "Validada", fecha: "2024-11-15 08:05" },
+      { titulo: "Calidad del dato", detalle: "Sin campos criticos faltantes.", estado: "Validada", fecha: "2024-11-15 08:18" },
+      { titulo: "Canal endemico", detalle: "Comportamiento dentro del rango esperado.", estado: "Validada", fecha: "2024-11-15 08:56" },
+    ],
+  },
+  {
+    id: "EV-0005",
+    evento: "Falla cardiaca",
+    semana: "SE 42",
+    territorio: "Tuquerres, Narino",
+    departamento: "Narino",
+    municipio: "Tuquerres",
+    casos: 21,
+    variacion: "+18%",
+    comportamiento: "Posible brote",
+    alerta: "Alta",
+    unidad: "Hospital San Juan de Dios de Tuquerres",
+    fechaNotificacion: "2024-11-15",
+    fechaCorte: "2024-11-15",
+    clasificacion: "Caso confirmado",
+    accion: "Ver analisis",
+    calidad: "89%",
+    sexo: "Masculino",
+    grupoEtario: "65 y mas",
+    aseguramiento: "Subsidiado",
+    hallazgos: [
+      "Se identifican 3 municipios por encima del umbral esperado para el evento piloto.",
+      "Tuquerres presenta aumento sostenido en las ultimas tres semanas epidemiologicas.",
+      "Se sugiere validacion de soporte y oportunidad de carga.",
+    ],
+    variables: [
+      ["Casos hospitalizados", "8"],
+      ["Tasa por 100 mil", "19.4"],
+      ["UPGD activas", "3"],
+      ["Completitud", "89%"],
+      ["Retraso promedio", "2.4 dias"],
+    ],
+    validaciones: [
+      { titulo: "Oportunidad", detalle: "Tres fichas superan el tiempo objetivo de cargue.", estado: "En revision", fecha: "2024-11-15 09:12" },
+      { titulo: "Calidad del dato", detalle: "Se requiere ajuste en variable de clasificacion.", estado: "En revision", fecha: "2024-11-15 09:16" },
+      { titulo: "Analisis territorial", detalle: "Patron escalado por posible concentracion local.", estado: "Escalada", fecha: "2024-11-15 09:31" },
+    ],
+  },
+  {
+    id: "EV-0006",
+    evento: "EPOC",
+    semana: "SE 42",
+    territorio: "Pasto, Narino",
+    departamento: "Narino",
+    municipio: "Pasto",
+    casos: 17,
+    variacion: "+9%",
+    comportamiento: "En observacion",
+    alerta: "Media",
+    unidad: "Hospital Local Centro",
+    fechaNotificacion: "2024-11-15",
+    fechaCorte: "2024-11-15",
+    clasificacion: "Caso probable",
+    accion: "Ver detalle",
+    calidad: "93%",
+    sexo: "Femenino",
+    grupoEtario: "50 a 64",
+    aseguramiento: "Contributivo",
+    hallazgos: [
+      "El incremento no supera el umbral, pero amerita seguimiento semanal.",
+      "Se observa agrupacion en dos UPGD del casco urbano.",
+      "La completitud del dato se mantiene por encima del minimo operativo.",
+    ],
+    variables: [
+      ["Casos nuevos", "7"],
+      ["Casos recurrentes", "10"],
+      ["Tasa por 100 mil", "11.6"],
+      ["UPGD activas", "6"],
+      ["Completitud", "93%"],
+    ],
+    validaciones: [
+      { titulo: "Territorio", detalle: "Ubicacion validada sin inconsistencias.", estado: "Validada", fecha: "2024-11-15 07:55" },
+      { titulo: "Clasificacion", detalle: "Pendiente confirmacion final por soporte clinico.", estado: "En revision", fecha: "2024-11-15 08:49" },
+      { titulo: "Tendencia", detalle: "Incluido en seguimiento por incremento reciente.", estado: "Escalada", fecha: "2024-11-15 09:02" },
+    ],
+  },
+  {
+    id: "EV-0007",
+    evento: "Insuficiencia renal",
+    semana: "SE 42",
+    territorio: "Samaniego, Narino",
+    departamento: "Narino",
+    municipio: "Samaniego",
+    casos: 11,
+    variacion: "+7%",
+    comportamiento: "Retraso de notificacion",
+    alerta: "Media",
+    unidad: "ESE Samaniego",
+    fechaNotificacion: "2024-11-14",
+    fechaCorte: "2024-11-15",
+    clasificacion: "Caso confirmado",
+    accion: "Ver detalle",
+    calidad: "84%",
+    sexo: "Masculino",
+    grupoEtario: "65 y mas",
+    aseguramiento: "Subsidiado",
+    hallazgos: [
+      "Tres IPS presentan retraso en cargue de fichas durante SE 42.",
+      "La oportunidad del reporte afecta la lectura consolidada del territorio.",
+      "Se recomienda cierre de validaciones antes de consolidado departamental.",
+    ],
+    variables: [
+      ["Casos nuevos", "4"],
+      ["Casos recurrentes", "7"],
+      ["Tasa por 100 mil", "9.1"],
+      ["UPGD activas", "2"],
+      ["Completitud", "84%"],
+    ],
+    validaciones: [
+      { titulo: "Oportunidad", detalle: "Se identifican retrasos superiores a 48 horas.", estado: "En revision", fecha: "2024-11-15 08:11" },
+      { titulo: "Calidad del dato", detalle: "Faltan dos variables secundarias en la ficha consolidada.", estado: "En revision", fecha: "2024-11-15 08:36" },
+      { titulo: "Escalamiento", detalle: "Se notifica a administrador territorial para ajuste de cargue.", estado: "Escalada", fecha: "2024-11-15 09:14" },
+    ],
+  },
+  {
+    id: "EV-0008",
+    evento: "Diabetes T2",
+    semana: "SE 42",
+    territorio: "Sandona, Narino",
+    departamento: "Narino",
+    municipio: "Sandona",
+    casos: 13,
+    variacion: "-2%",
+    comportamiento: "Estable",
+    alerta: "Baja",
+    unidad: "Hospital Clarita Santos",
+    fechaNotificacion: "2024-11-15",
+    fechaCorte: "2024-11-15",
+    clasificacion: "Caso confirmado",
+    accion: "Ver detalle",
+    calidad: "94%",
+    sexo: "Femenino",
+    grupoEtario: "35 a 49",
+    aseguramiento: "Contributivo",
+    hallazgos: [
+      "No se observan cambios relevantes frente al promedio historico de cuatro semanas.",
+      "La calidad del dato se mantiene estable y sin alertas activas.",
+      "Se conserva cobertura regular por unidad notificadora.",
+    ],
+    variables: [
+      ["Casos nuevos", "3"],
+      ["Casos recurrentes", "10"],
+      ["Tasa por 100 mil", "8.7"],
+      ["UPGD activas", "3"],
+      ["Completitud", "94%"],
+    ],
+    validaciones: [
+      { titulo: "Territorio", detalle: "Registro consistente con el directorio institucional.", estado: "Validada", fecha: "2024-11-15 08:02" },
+      { titulo: "Calidad del dato", detalle: "Sin omisiones en variables obligatorias.", estado: "Validada", fecha: "2024-11-15 08:17" },
+      { titulo: "Comportamiento", detalle: "Sin desviaciones frente al historico de referencia.", estado: "Validada", fecha: "2024-11-15 08:47" },
+    ],
+  },
 ];
 
-const historyItems = [
-  { dt: "2024-11-15", t: "Consulta control", d: "Glucosa: 178 mg/dL. HbA1c: 8.2%. Se ajusta Metformina 1000mg.", tone: "emerald" },
-  { dt: "2024-10-20", t: "Hospitalización", d: "Crisis hiperglucémica. Glucosa ingreso 420 mg/dL. UCI 2 días.", tone: "rose" },
-  { dt: "2024-10-22", t: "Resultados laboratorio", d: "HbA1c 9.1%, Creatinina 1.8 mg/dL, Microalbuminuria positiva.", tone: "violet" },
-  { dt: "2024-09-15", t: "Ficha SIVIGILA registrada", d: "Caso confirmado y seguimiento semanal.", tone: "slate" },
-  { dt: "2024-08-30", t: "Alerta de riesgo", d: "Tendencia clínica creciente. Seguimiento intensivo activado.", tone: "amber" },
+const supportFilesSeed = [
+  { nombre: "soporte_falla_cardiaca_pasto_se42.pdf", tipo: "Resumen UPGD", unidad: "Hospital Universitario Departamental", tamano: "810 KB", fecha: "2024-11-15" },
+  { nombre: "consolidado_tumaco_se42.xlsx", tipo: "Base consolidada", unidad: "Hospital San Andres de Tumaco", tamano: "1.7 MB", fecha: "2024-11-15" },
+  { nombre: "acta_validacion_tuquerres.docx", tipo: "Acta de revision", unidad: "Hospital San Juan de Dios", tamano: "420 KB", fecha: "2024-11-15" },
+  { nombre: "tablero_calidad_dato_se42.pdf", tipo: "Calidad del dato", unidad: "Nivel departamental", tamano: "980 KB", fecha: "2024-11-14" },
 ];
 
-const auditLog = [
-  { ts: "2024-11-15 14:32", user: "Dra. González", role: "Médico", action: "Ficha SIVIGILA creada", obj: "P-0001", result: "Éxito", ip: "192.168.1.45" },
-  { ts: "2024-11-15 13:15", user: "Dr. Herrera", role: "Administrador", action: "Umbrales modificados", obj: "Global", result: "Éxito", ip: "192.168.1.10" },
-  { ts: "2024-11-15 12:48", user: "C. Vega", role: "Estudiante", action: "Historial consultado", obj: "P-0003", result: "Éxito", ip: "192.168.1.78" },
-  { ts: "2024-11-15 12:00", user: "Sistema", role: "Auto", action: "Reporte trimestral generado", obj: "—", result: "Éxito", ip: "SISTEMA" },
-  { ts: "2024-11-14 16:20", user: "Dra. López", role: "Médico", action: "Documento cargado", obj: "P-0006", result: "Éxito", ip: "192.168.1.52" },
+const alertsSeed = [
+  { nivel: "Alta", evento: "Falla cardiaca", territorio: "Pasto, Narino", semana: "SE 42", mensaje: "Pasto supera el umbral esperado de notificaciones de falla cardiaca en SE 42." },
+  { nivel: "Media", evento: "Falla cardiaca", territorio: "Tumaco, Narino", semana: "SE 42", mensaje: "Tumaco presenta concentracion territorial superior al promedio departamental." },
+  { nivel: "Alta", evento: "Falla cardiaca", territorio: "Tuquerres, Narino", semana: "SE 42", mensaje: "Tres municipios se ubican por encima del canal esperado para el evento piloto." },
+  { nivel: "Media", evento: "Insuficiencia renal", territorio: "Samaniego, Narino", semana: "SE 42", mensaje: "Tres IPS presentan retraso en cargue de fichas y requieren cierre de validacion." },
+  { nivel: "Baja", evento: "Diabetes T2", territorio: "Ipiales, Narino", semana: "SE 42", mensaje: "La calidad del dato mejora, pero dos UPGD siguen en observacion por consistencia." },
 ];
 
-const usersSeed = [
-  { nm: "Dra. María González", email: "m.gonzalez@hosp.co", role: "Médico", st: "activo", last: "Hoy" },
-  { nm: "Dr. Roberto Herrera", email: "r.herrera@hosp.co", role: "Administrador", st: "activo", last: "Hoy" },
-  { nm: "Dr. Carlos López", email: "c.lopez@hosp.co", role: "Médico", st: "activo", last: "Ayer" },
-  { nm: "Carlos Vega", email: "c.vega@ucc.edu.co", role: "Estudiante", st: "activo", last: "Hoy" },
-  { nm: "Dra. Ana Martínez", email: "a.martinez@hosp.co", role: "Médico", st: "inactivo", last: "15 Nov" },
+const aiFindings = [
+  "Falla cardiaca presenta aumento del 22% en Pasto frente al promedio de las ultimas 4 semanas.",
+  "Tumaco concentra el mayor crecimiento relativo del evento piloto.",
+  "Se identifican 3 municipios por encima del umbral esperado.",
+  "La semana epidemiologica 42 requiere revision territorial prioritaria.",
 ];
 
-const thresholdsSeed = [
-  { id: "gluc", nm: "Glucosa ayunas", unit: "mg/dL", val: 180, min: 70, max: 500, cat: "Metabolismo" },
-  { id: "hba1c", nm: "HbA1c", unit: "%", val: 7, min: 4, max: 15, cat: "Metabolismo" },
-  { id: "tas", nm: "TA Sistólica", unit: "mmHg", val: 140, min: 80, max: 240, cat: "Cardiovascular" },
-  { id: "tad", nm: "TA Diastólica", unit: "mmHg", val: 90, min: 50, max: 130, cat: "Cardiovascular" },
-  { id: "creat", nm: "Creatinina", unit: "mg/dL", val: 1.5, min: 0.3, max: 10, cat: "Renal" },
-  { id: "sat", nm: "SpO2", unit: "%", val: 90, min: 70, max: 100, cat: "Respiratorio" },
+const epidemiologicalPrompts = [
+  "Analizar variacion territorial",
+  "Detectar comportamiento inusual",
+  "Comparar contra promedio historico",
+  "Revisar calidad del dato",
+  "Identificar municipios priorizados",
 ];
 
-const modulesSeed = [
-  { id: "fc", nm: "Falla Cardíaca", st: "activo", vars: 32, fichas: 1240 },
-  { id: "dm", nm: "Diabetes Mellitus T2", st: "activo", vars: 28, fichas: 3800 },
-  { id: "hta", nm: "Hipertensión Arterial", st: "activo", vars: 18, fichas: 2900 },
-  { id: "epoc", nm: "EPOC", st: "configurando", vars: 22, fichas: 890 },
-  { id: "irc", nm: "Insuf. Renal Crónica", st: "pendiente", vars: 0, fichas: 0 },
+const aiPatterns = [
+  { titulo: "Concentracion territorial del evento piloto", descripcion: "El crecimiento relativo se concentra en cabeceras municipales con mayor densidad notificadora.", score: "91%", tipo: "Patron detectado" },
+  { titulo: "Retraso de cargue en UPGD perifricas", descripcion: "Las notificaciones tardias se agrupan en municipios con menor conectividad operativa.", score: "88%", tipo: "Calidad del dato" },
+  { titulo: "Incremento sostenido de falla cardiaca", descripcion: "La serie semanal del piloto muestra una variacion positiva durante cuatro cortes consecutivos.", score: "93%", tipo: "Tendencia" },
 ];
 
 const reportsSeed = [
-  { nm: "Consolidado semanal — Semana 48", fmt: "PDF", sz: "2.4 MB", dt: "2024-11-30", tp: "Automático" },
-  { nm: "Boletín epidemiológico ECNT Nariño", fmt: "PDF", sz: "1.8 MB", dt: "2024-11-29", tp: "Programado" },
-  { nm: "Reporte SIVIGILA departamental", fmt: "Excel", sz: "4.1 MB", dt: "2024-11-28", tp: "Automático" },
-  { nm: "Indicadores de calidad notificación", fmt: "PDF", sz: "890 KB", dt: "2024-11-27", tp: "Manual" },
+  { nombre: "Boletin epidemiologico ECNT - SE 42", formato: "PDF", tamano: "2.4 MB", fecha: "2024-11-30", tipo: "Automatico" },
+  { nombre: "Consolidado departamental de notificaciones", formato: "Excel", tamano: "4.1 MB", fecha: "2024-11-29", tipo: "Corte semanal" },
+  { nombre: "Calidad del dato por unidad notificadora", formato: "PDF", tamano: "960 KB", fecha: "2024-11-28", tipo: "Seguimiento" },
+  { nombre: "Reporte territorial del piloto de falla cardiaca", formato: "PDF", tamano: "1.8 MB", fecha: "2024-11-27", tipo: "Analitico" },
 ];
 
-const docsSeed = [
-  { nm: "Lab_2024-11-15.pdf", tp: "Laboratorio", pac: "María González", sz: "890 KB", dt: "2024-11-15" },
-  { nm: "Ecografía_Renal.pdf", tp: "Imagenología", pac: "Jorge Castillo", sz: "2.4 MB", dt: "2024-11-10" },
-  { nm: "Historia_Clinica.pdf", tp: "Historia clínica", pac: "María González", sz: "1.1 MB", dt: "2024-10-20" },
-  { nm: "Espirometria_EPOC.pdf", tp: "Función resp.", pac: "Ana Mendoza", sz: "560 KB", dt: "2024-10-15" },
+const auditLog = [
+  { fecha: "2024-11-15 14:32", usuario: "Laura Martinez", rol: "Profesional notificador", accion: "Envio de notificacion", objeto: "EV-0001", resultado: "Exito", origen: "UPGD Pasto" },
+  { fecha: "2024-11-15 13:15", usuario: "Ana Rojas", rol: "Epidemiologa territorial", accion: "Escalamiento de alerta", objeto: "EV-0005", resultado: "Exito", origen: "Analitica territorial" },
+  { fecha: "2024-11-15 12:48", usuario: "Carlos Herrera", rol: "Administrador territorial", accion: "Actualizacion de umbral", objeto: "Falla cardiaca", resultado: "Exito", origen: "Configuracion de eventos" },
+  { fecha: "2024-11-15 12:00", usuario: "Sistema", rol: "Automatico", accion: "Generacion de boletin", objeto: "SE 42", resultado: "Exito", origen: "Motor de reportes" },
+  { fecha: "2024-11-14 16:20", usuario: "Ana Rojas", rol: "Epidemiologa territorial", accion: "Validacion de consistencia", objeto: "EV-0002", resultado: "En revision", origen: "Modulo de validacion" },
 ];
 
-const iaPatterns = [
-  { t: "Correlación Diabetes T2 → IRC", d: "El 68% de pacientes con HbA1c > 8% durante >3 años desarrollan nefropatía diabética estadio ≥3.", sc: "92%", tipo: "Correlación" },
-  { t: "Estacionalidad exacerbaciones EPOC", d: "Incremento del 35% en exacerbaciones severas durante meses de lluvia.", sc: "87%", tipo: "Estacionalidad" },
-  { t: "Brecha de control metabólico", d: "Solo el 32% de pacientes diabéticos alcanzan meta HbA1c < 7%.", sc: "89%", tipo: "Brecha clínica" },
+const usersSeed = [
+  { nombre: "Laura Martinez", correo: "laura.martinez@pmec.gov.co", rol: "Profesional notificador", estado: "Activo", area: "UPGD Pasto" },
+  { nombre: "Ana Rojas", correo: "ana.rojas@pmec.gov.co", rol: "Epidemiologa territorial", estado: "Activo", area: "Vigilancia departamental" },
+  { nombre: "Carlos Herrera", correo: "carlos.herrera@pmec.gov.co", rol: "Administrador territorial", estado: "Activo", area: "Gobernanza del sistema" },
+  { nombre: "Diana Mora", correo: "diana.mora@pmec.gov.co", rol: "Analista de datos", estado: "Activo", area: "Analitica territorial" },
+];
+
+const eventConfigSeed = [
+  { evento: "Falla cardiaca", estado: "Piloto activo", umbral: "Canal historico + 15%", periodicidad: "Semanal", variables: 32 },
+  { evento: "Diabetes T2", estado: "Activo", umbral: "Canal historico + 10%", periodicidad: "Semanal", variables: 28 },
+  { evento: "Hipertension", estado: "Activo", umbral: "Canal historico + 10%", periodicidad: "Semanal", variables: 22 },
+  { evento: "EPOC", estado: "Configuracion", umbral: "Pendiente", periodicidad: "Semanal", variables: 24 },
+  { evento: "Insuficiencia renal", estado: "Pendiente", umbral: "Pendiente", periodicidad: "Semanal", variables: 20 },
 ];
 
 const publicTabs = [
   { id: "indicadores", label: "Indicadores" },
   { id: "mapa", label: "Mapa de calor" },
-  { id: "estadisticas", label: "Estadísticas" },
   { id: "tendencias", label: "Tendencias" },
-  { id: "prevencion", label: "Prevención" },
-  { id: "enfermedades", label: "Enfermedades crónicas" },
+  { id: "prevencion", label: "Prevencion" },
+  { id: "eventos", label: "Eventos vigilados" },
 ];
 
 const publicResources = [
-  ["Indicadores oficiales", "Resumen agregado de casos, tasas y tendencias por territorio."],
-  ["GeoVisor y mapas", "Exploración territorial de concentración de eventos y comportamiento geográfico."],
-  ["Reportes y gráficos", "Consulta de boletines, visualizaciones y salidas descargables."],
-  ["Fichas y protocolos", "Acceso a fichas técnicas y lineamientos de vigilancia por evento."],
-  ["Microdatos anonimizados", "Consulta de datos abiertos con fines de análisis e investigación."],
-  ["Publicaciones y boletines", "Material epidemiológico para seguimiento de eventos de interés en salud pública."],
+  ["Indicadores oficiales", "Consulta agregada de notificaciones, tendencias y variacion semanal por territorio."],
+  ["GeoVisor conceptual", "Exploracion territorial del comportamiento del evento piloto y otros eventos vigilados."],
+  ["Boletines y reportes", "Salida institucional en PDF y Excel para seguimiento publico."],
+  ["Protocolos y fichas", "Lineamientos de vigilancia por evento y documentos tecnicos de apoyo."],
 ];
 
-const chronicCards = [
-  ["Diabetes tipo 2", "Enfermedad metabólica crónica caracterizada por niveles altos de glucosa en sangre y riesgo de complicaciones cardiovasculares, renales y neurológicas."],
-  ["Hipertensión arterial", "Aumento persistente de la presión arterial que incrementa el riesgo de infarto, accidente cerebrovascular y enfermedad renal."],
-  ["EPOC", "Enfermedad pulmonar obstructiva crónica que dificulta la respiración y suele asociarse a tabaquismo y exposición a contaminantes."],
-  ["Insuficiencia renal crónica", "Pérdida progresiva de la función de los riñones, con impacto en el equilibrio hídrico, electrolítico y cardiovascular."],
-  ["Falla cardiaca", "Síndrome en el que el corazón no logra bombear suficiente sangre para cubrir las necesidades del cuerpo, produciendo síntomas como falta de aire, fatiga y edema."],
-  ["Asma crónica", "Trastorno inflamatorio de las vías respiratorias con episodios de tos, sibilancias y dificultad para respirar."],
+const publicEventCards = [
+  ["Falla cardiaca", "Evento piloto priorizado para vigilancia de comportamiento semanal, concentracion territorial y alertas de incremento."],
+  ["Diabetes T2", "Seguimiento agregado de notificaciones para analisis de carga poblacional y distribucion territorial."],
+  ["Hipertension", "Monitoreo territorial de eventos notificados con enfoque de oportunidad y calidad del dato."],
+  ["EPOC", "Observacion del comportamiento estacional y de la concentracion por unidad notificadora."],
 ];
 
-const heartFailurePrevention = [
-  "Controlar la presión arterial, la diabetes y otros factores de riesgo cardiovascular.",
-  "No fumar y reducir la exposición al humo del tabaco.",
-  "Mantener una alimentación saludable con menos sal y ultraprocesados.",
-  "Realizar actividad física regular según recomendación médica.",
-  "Consultar a tiempo ante falta de aire, fatiga, hinchazón de piernas o aumento rápido de peso.",
-  "Adherirse al tratamiento y al seguimiento médico cuando existe enfermedad cardíaca previa.",
+const preventionTips = [
+  "Promover control de factores de riesgo cardiovasculares en el territorio.",
+  "Fortalecer deteccion temprana y oportunidad de la notificacion.",
+  "Reforzar cierre oportuno de fichas en unidades notificadoras con retraso.",
+  "Asegurar consistencia entre evento, clasificacion y semana epidemiologica.",
+  "Priorizar revision de municipios por encima del umbral esperado.",
 ];
 
-const heartFailureSymptoms = [
-  "Falta de aire",
-  "Fatiga o debilidad",
-  "Hinchazón en piernas o tobillos",
-  "Aumento rápido de peso",
-  "Tos persistente o sibilancias",
-  "Palpitaciones o ritmo irregular",
-];
+const roleProfiles = {
+  notificador: {
+    name: "Laura Martinez",
+    role: "Profesional notificador",
+    badge: "Operacion local",
+  },
+  epidemiologo: {
+    name: "Ana Rojas",
+    role: "Epidemiologa territorial",
+    badge: "Analisis departamental",
+  },
+  admin: {
+    name: "Carlos Herrera",
+    role: "Administrador territorial",
+    badge: "Gobernanza del sistema",
+  },
+};
 
-const clinicianPrompts = [
-  "Resumir historial clínico",
-  "Explicar factores de riesgo",
-  "Detectar cambios relevantes",
-  "Sugerir seguimiento",
-  "Priorizar paciente",
-  "Preparar resumen para ficha",
+const menuItems = [
+  ["dashboard", "Inicio", LayoutDashboard],
+  ["notificaciones", "Notificaciones", Users],
+  ["ficha", "Ficha de notificacion", ClipboardList],
+  ["validacion", "Validacion de datos", CheckCircle2],
+  ["alertas", "Alertas epidemiologicas", TriangleAlert],
+  ["analitica", "Analitica territorial", ChartColumn],
+  ["geovisor", "Geovisor", Map],
+  ["reportes", "Reportes", FileOutput],
+  ["auditoria", "Auditoria", ShieldCheck],
+  ["usuarios", "Usuarios y roles", User],
+  ["configuracion", "Configuracion de eventos", Settings],
+  ["analisis-ia", "Analisis IA", Brain],
 ];
 
 function cn(...classes) {
@@ -195,107 +519,150 @@ function cn(...classes) {
 }
 
 function avatar(name) {
-  return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase();
 }
 
-function riskClasses(risk) {
-  return {
-    critico: "bg-rose-100 text-rose-700 border-rose-200",
-    alto: "bg-orange-100 text-orange-700 border-orange-200",
-    medio: "bg-amber-100 text-amber-700 border-amber-200",
-    bajo: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  }[risk] || "bg-slate-100 text-slate-700 border-slate-200";
+function parseVariation(value) {
+  return Number.parseInt(String(value).replace("%", ""), 10) || 0;
 }
 
-function statusClasses(status) {
+function alertClasses(level) {
   return {
-    activo: "bg-cyan-100 text-cyan-700 border-cyan-200",
-    seguimiento: "bg-amber-100 text-amber-700 border-amber-200",
-    control: "bg-blue-100 text-blue-700 border-blue-200",
-    inactivo: "bg-slate-100 text-slate-700 border-slate-200",
-  }[status] || "bg-slate-100 text-slate-700 border-slate-200";
+    Critica: "border-rose-200 bg-rose-50 text-rose-700",
+    Alta: "border-orange-200 bg-orange-50 text-orange-700",
+    Media: "border-amber-200 bg-amber-50 text-amber-700",
+    Baja: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  }[level] || "border-slate-200 bg-slate-50 text-slate-700";
 }
 
-function toneClasses(tone) {
+function behaviorClasses(behavior) {
   return {
-    emerald: "bg-emerald-50 text-emerald-800 border-emerald-200",
-    rose: "bg-rose-50 text-rose-800 border-rose-200",
-    violet: "bg-violet-50 text-violet-800 border-violet-200",
-    amber: "bg-amber-50 text-amber-800 border-amber-200",
-    slate: "bg-slate-50 text-slate-800 border-slate-200",
-  }[tone] || "bg-slate-50 text-slate-800 border-slate-200";
+    "Incremento inusual": "border-rose-200 bg-rose-50 text-rose-700",
+    "En observacion": "border-amber-200 bg-amber-50 text-amber-700",
+    Estable: "border-cyan-200 bg-cyan-50 text-cyan-700",
+    Esperado: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    "Posible brote": "border-orange-200 bg-orange-50 text-orange-700",
+    "Retraso de notificacion": "border-violet-200 bg-violet-50 text-violet-700",
+    Subregistro: "border-violet-200 bg-violet-50 text-violet-700",
+  }[behavior] || "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+function validationClasses(status) {
+  return {
+    Validada: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    "En revision": "border-amber-200 bg-amber-50 text-amber-700",
+    Escalada: "border-rose-200 bg-rose-50 text-rose-700",
+  }[status] || "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+function variationClasses(value) {
+  if (String(value).startsWith("+")) return "text-rose-700";
+  if (String(value).startsWith("-")) return "text-emerald-700";
+  return "text-slate-700";
 }
 
 function heatClass(value, max) {
-  const r = value / max;
-  if (r > 0.7) return "bg-rose-600 text-white";
-  if (r > 0.5) return "bg-orange-500 text-white";
-  if (r > 0.35) return "bg-amber-300 text-slate-900";
-  if (r > 0.18) return "bg-emerald-200 text-emerald-950";
+  const ratio = value / max;
+  if (ratio > 0.7) return "bg-rose-600 text-white";
+  if (ratio > 0.5) return "bg-orange-500 text-white";
+  if (ratio > 0.35) return "bg-amber-300 text-slate-900";
+  if (ratio > 0.18) return "bg-emerald-200 text-emerald-950";
   return "bg-emerald-100 text-emerald-900";
 }
 
-function MiniBarChart({ values, tone = "slate" }) {
-  const max = Math.max(...values);
-  const color = {
-    teal: "bg-emerald-500",
-    violet: "bg-violet-500",
-    rose: "bg-rose-500",
-    navy: "bg-slate-900",
+function toneBar(tone) {
+  return {
+    teal: "bg-teal-500",
+    slate: "bg-slate-700",
+    cyan: "bg-cyan-600",
     amber: "bg-amber-500",
-    slate: "bg-slate-500",
-  }[tone];
+    rose: "bg-rose-500",
+  }[tone] || "bg-slate-700";
+}
+
+function MiniTrendChart({ values, labels, tone = "teal", tall = false }) {
+  const max = Math.max(...values, 1);
+
   return (
-    <div className="flex items-end gap-2 h-36">
-      {values.map((v, i) => (
-        <div key={i} className="flex-1 flex flex-col justify-end gap-2">
-          <div className={cn("rounded-t-xl", color)} style={{ height: `${(v / max) * 100}%` }} />
-          <div className="text-[11px] text-slate-500 text-center">{months[i]}</div>
+    <div className={cn("flex items-end gap-2", tall ? "h-40" : "h-28")}>
+      {values.map((value, index) => (
+        <div key={`${labels[index]}-${value}`} className="flex-1 flex flex-col justify-end gap-2">
+          <div className={cn("rounded-t-xl transition-all", toneBar(tone))} style={{ height: `${(value / max) * 100}%` }} />
+          <div className="text-[11px] text-slate-500 text-center">{labels[index]}</div>
         </div>
       ))}
     </div>
   );
 }
 
-function DonutLegend({ items }) {
-  return (
-    <div className="space-y-3">
-      {items.map((item, i) => (
-        <div key={i} className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full" style={{ background: item.color }} />
-            <span className="text-slate-600">{item.label}</span>
-          </div>
-          <span className="font-medium">{item.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+function KpiCard({ title, value, subtitle, icon: Icon, accent = "teal" }) {
+  const toneMap = {
+    teal: "bg-teal-50 text-teal-700 border-teal-100",
+    slate: "bg-slate-100 text-slate-700 border-slate-200",
+    cyan: "bg-cyan-50 text-cyan-700 border-cyan-100",
+    amber: "bg-amber-50 text-amber-700 border-amber-100",
+    rose: "bg-rose-50 text-rose-700 border-rose-100",
+    emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  };
 
-function TopBar({ title, subtitle, role, onPublic, onApp, currentMode }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/92 backdrop-blur-xl px-5 lg:px-8 py-4 flex items-center gap-4 shadow-sm">
-      <div>
-        <div className="inline-flex items-center gap-2 rounded-full bg-cyan-50 border border-cyan-100 px-3 py-1 text-[11px] font-medium text-cyan-800 mb-2">
-          Plataforma institucional · monitoreo clínico y epidemiológico
+    <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-sm text-slate-500">{title}</div>
+          <div className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{value}</div>
+          <div className="mt-2 text-sm text-slate-500">{subtitle}</div>
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">{title}</h1>
-        <p className="text-sm text-slate-500">{subtitle}</p>
+        <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl border", toneMap[accent])}>
+          <Icon className="h-5 w-5" />
+        </div>
       </div>
-      <div className="ml-auto flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 min-w-[320px] text-slate-500 text-sm">
-          <Search className="w-4 h-4" /> Buscar pacientes, fichas o diagnósticos...
+    </div>
+  );
+}
+
+function TopBar({ title, subtitle, profile, currentMode, onPublic, onApp }) {
+  return (
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur lg:px-8">
+      <div className="flex items-center gap-4">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1 text-[11px] font-medium text-cyan-800">
+            Plataforma institucional · vigilancia epidemiologica de enfermedades cronicas
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">{title}</h1>
+          <p className="text-sm text-slate-500">{subtitle}</p>
         </div>
-        <button onClick={currentMode === "app" ? onPublic : onApp} className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50">
-          {currentMode === "app" ? "Vista pública" : "Vista institucional"}
-        </button>
-        <button className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center"><Bell className="w-5 h-5" /></button>
-        <div className="hidden sm:flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-slate-950 to-cyan-900 text-white flex items-center justify-center text-sm font-semibold">{avatar(role)}</div>
-          <div>
-            <div className="text-sm font-medium text-slate-900">{role}</div>
-            <div className="text-xs text-slate-500">Acceso autenticado</div>
+
+        <div className="ml-auto flex items-center gap-3">
+          <div className="hidden min-w-[360px] items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-500 md:flex">
+            <Search className="h-4 w-4" />
+            <span>Buscar evento, territorio, semana epidemiologica o unidad notificadora...</span>
+          </div>
+
+          <button
+            onClick={currentMode === "app" ? onPublic : onApp}
+            className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            {currentMode === "app" ? "Vista publica" : "Vista institucional"}
+          </button>
+
+          <button className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+            <Bell className="h-5 w-5" />
+          </button>
+
+          <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-2 shadow-sm sm:flex">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#10263f] text-sm font-semibold text-white">
+              {avatar(profile.name)}
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-900">{profile.name}</div>
+              <div className="text-xs text-slate-500">{profile.role}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -303,263 +670,312 @@ function TopBar({ title, subtitle, role, onPublic, onApp, currentMode }) {
   );
 }
 
-function Sidebar({ role, view, setView }) {
-  const navByRole = {
-    medico: [
-      ["Principal", [
-        ["dashboard", "Inicio", LayoutDashboard],
-        ["pacientes", "Pacientes", Users],
-        ["patient-detail", "Detalle paciente", Stethoscope],
-        ["ficha", "Ficha clínica", ClipboardList],
-        ["documentos", "Documentos", FolderOpen],
-        ["alertas", "Alertas", TriangleAlert],
-      ]],
-      ["Análisis", [
-        ["analitica", "Analítica", ChartColumn],
-        ["reportes", "Reportes", FileOutput],
-        ["ia-clinica", "Copiloto IA", Sparkles],
-      ]],
-    ],
-    admin: [
-      ["Gestión", [
-        ["dashboard", "Inicio", LayoutDashboard],
-        ["pacientes", "Pacientes", Users],
-        ["analitica", "Analítica", ChartColumn],
-        ["reportes", "Reportes", FileOutput],
-        ["usuarios", "Usuarios", User],
-        ["auditoria", "Auditoría", ShieldCheck],
-        ["umbrales", "Umbrales", SlidersHorizontal],
-        ["modulos", "Módulos", Settings],
-        ["ia-patrones", "Patrones IA", Brain],
-        ["ia-prediccion", "Predicción IA", Activity],
-      ]],
-    ],
-    estudiante: [
-      ["Aprendizaje", [
-        ["dashboard", "Inicio", LayoutDashboard],
-        ["pacientes", "Pacientes", Users],
-        ["historial", "Historial", ClipboardList],
-        ["ficha", "Asistencia ficha", FileText],
-        ["recursos", "Recursos", BookOpen],
-      ]],
-    ],
-  };
-
+function Sidebar({ view, setView, profile }) {
   return (
-    <aside className="hidden lg:flex w-72 shrink-0 flex-col bg-gradient-to-b from-slate-950 via-slate-950 to-cyan-950 text-white p-6 border-r border-white/5">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-11 h-11 rounded-2xl bg-cyan-300 text-slate-950 flex items-center justify-center font-bold text-lg shadow-lg shadow-cyan-500/20">P</div>
+    <aside className="hidden w-72 shrink-0 flex-col border-r border-[#173452] bg-[#10263f] px-6 py-6 text-white lg:flex">
+      <div className="mb-8 flex items-center gap-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-300 text-lg font-bold text-slate-950">
+          P
+        </div>
         <div>
-          <div className="font-semibold text-lg tracking-tight">PMEC</div>
-          <div className="text-slate-400 text-sm">Plataforma clínica institucional</div>
+          <div className="text-lg font-semibold tracking-tight">PMEC</div>
+          <div className="text-sm text-slate-300">Observatorio institucional</div>
         </div>
       </div>
 
-      <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 mb-8">
-        <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400 mb-2">Estado del sistema</div>
-        <div className="grid grid-cols-2 gap-3">
+      <div className="mb-8 rounded-[24px] border border-white/10 bg-white/5 p-4">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Corte operativo</div>
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-white/5 px-3 py-3">
-            <div className="text-xs text-slate-400">Usuarios</div>
-            <div className="text-lg font-semibold mt-1">156</div>
+            <div className="text-xs text-slate-300">SE activa</div>
+            <div className="mt-1 text-lg font-semibold">42</div>
           </div>
           <div className="rounded-2xl bg-white/5 px-3 py-3">
-            <div className="text-xs text-slate-400">Alertas</div>
-            <div className="text-lg font-semibold mt-1">18</div>
+            <div className="text-xs text-slate-300">Calidad</div>
+            <div className="mt-1 text-lg font-semibold">94%</div>
+          </div>
+          <div className="rounded-2xl bg-white/5 px-3 py-3">
+            <div className="text-xs text-slate-300">Alertas</div>
+            <div className="mt-1 text-lg font-semibold">6</div>
+          </div>
+          <div className="rounded-2xl bg-white/5 px-3 py-3">
+            <div className="text-xs text-slate-300">Territorios</div>
+            <div className="mt-1 text-lg font-semibold">8</div>
           </div>
         </div>
       </div>
 
-      <div className="space-y-8 flex-1">
-        {(navByRole[role] || []).map(([section, items]) => (
-          <div key={section}>
-            <div className="text-[11px] uppercase tracking-[0.22em] text-slate-500 mb-3">{section}</div>
-            <div className="space-y-1.5">
-              {items.map(([id, label, Icon]) => (
-                <button
-                  key={id}
-                  onClick={() => setView(id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition text-left border",
-                    view === id ? "bg-cyan-400/10 border-cyan-300/20 text-white shadow-inner" : "border-transparent text-slate-300 hover:bg-white/5 hover:border-white/5"
-                  )}
-                >
-                  <Icon className={cn("w-4 h-4", view === id ? "text-cyan-300" : "text-slate-400")} />
-                  <span className="flex-1">{label}</span>
-                  {view === id && <ChevronRight className="w-4 h-4 text-cyan-300" />}
-                </button>
-              ))}
-            </div>
-          </div>
+      <div className="flex-1 space-y-1.5">
+        {menuItems.map(([id, label, Icon]) => (
+          <button
+            key={id}
+            onClick={() => setView(id)}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition",
+              view === id
+                ? "border-teal-300/30 bg-teal-300/10 text-white"
+                : "border-transparent text-slate-300 hover:border-white/5 hover:bg-white/5",
+            )}
+          >
+            <Icon className={cn("h-4 w-4", view === id ? "text-teal-300" : "text-slate-400")} />
+            <span className="flex-1">{label}</span>
+            {view === id ? <ChevronRight className="h-4 w-4 text-teal-300" /> : null}
+          </button>
         ))}
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-        <div className="text-sm font-medium capitalize">{role === "medico" ? "Dra. María González" : role === "admin" ? "Dr. Roberto Herrera" : "Carlos Vega"}</div>
-        <div className="text-slate-400 text-xs mt-1">{role === "medico" ? "Médico tratante" : role === "admin" ? "Administrador del sistema" : "Estudiante del semillero"}</div>
+      <div className="mt-8 rounded-[24px] border border-white/10 bg-white/5 p-4">
+        <div className="text-sm font-medium">{profile.name}</div>
+        <div className="mt-1 text-xs text-slate-300">{profile.role}</div>
+        <div className="mt-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-slate-300">
+          {profile.badge}
+        </div>
       </div>
     </aside>
   );
 }
 
-function KpiCard({ title, value, sub, icon: Icon, accent = "emerald" }) {
-  const tones = {
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    rose: "bg-rose-50 text-rose-700 border-rose-100",
-    amber: "bg-amber-50 text-amber-700 border-amber-100",
-    violet: "bg-violet-50 text-violet-700 border-violet-100",
-    sky: "bg-cyan-50 text-cyan-700 border-cyan-100",
-    slate: "bg-slate-50 text-slate-700 border-slate-100",
-  };
+function CompactNav({ view, setView }) {
   return (
-    <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-sm text-slate-500">{title}</div>
-          <div className="text-3xl font-semibold tracking-tight text-slate-950 mt-2">{value}</div>
-          <div className="text-sm text-slate-500 mt-2">{sub}</div>
-        </div>
-        <div className={cn("w-12 h-12 rounded-2xl border flex items-center justify-center", tones[accent])}>
-          <Icon className="w-5 h-5" />
-        </div>
+    <div className="border-b border-slate-200 bg-white px-5 py-3 lg:hidden">
+      <div className="flex gap-2 overflow-x-auto">
+        {menuItems.map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setView(id)}
+            className={cn(
+              "whitespace-nowrap rounded-2xl border px-4 py-2 text-sm font-medium",
+              view === id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-700",
+            )}
+          >
+            {label}
+          </button>
+        ))}
       </div>
     </div>
   );
 }
 
-function PatientTable({ patients, onSelect }) {
+function RoleSwitcher({ role, setRole }) {
+  const items = [
+    ["notificador", "Profesional notificador"],
+    ["epidemiologo", "Epidemiologa territorial"],
+    ["admin", "Administrador territorial"],
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map(([id, label]) => (
+        <button
+          key={id}
+          onClick={() => setRole(id)}
+          className={cn(
+            "rounded-2xl border px-4 py-2 text-sm font-medium",
+            role === id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function NotificationTable({ notifications, onSelect, onAnalytics }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[760px] text-sm">
         <thead>
-          <tr className="text-left text-slate-500 border-b border-slate-200">
-            <th className="py-4 pr-4 font-medium">Paciente</th>
-            <th className="py-4 pr-4 font-medium">Diagnóstico</th>
-            <th className="py-4 pr-4 font-medium">Periodicidad</th>
-            <th className="py-4 pr-4 font-medium">Municipio</th>
-            <th className="py-4 pr-4 font-medium">Riesgo</th>
-            <th className="py-4 pr-4 font-medium">Estado</th>
-            <th className="py-4 font-medium">Acción</th>
+          <tr className="border-b border-slate-200 text-left text-slate-500">
+            <th className="py-4 pr-4 font-medium">Evento</th>
+            <th className="py-4 pr-4 font-medium">Semana epidemiologica</th>
+            <th className="py-4 pr-4 font-medium">Territorio</th>
+            <th className="py-4 pr-4 font-medium">Casos notificados</th>
+            <th className="py-4 pr-4 font-medium">Variacion</th>
+            <th className="py-4 pr-4 font-medium">Comportamiento</th>
+            <th className="py-4 pr-4 font-medium">Nivel de alerta</th>
+            <th className="py-4 font-medium">Accion</th>
           </tr>
         </thead>
         <tbody>
-          {patients.map((p) => (
-            <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50">
-              <td className="py-4 pr-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-950 to-cyan-900 text-white flex items-center justify-center text-xs font-semibold">{avatar(p.nm)}</div>
-                  <div>
-                    <div className="font-medium text-slate-900">{p.nm}</div>
-                    <div className="text-xs text-slate-500">{p.id} · {p.eps}</div>
-                  </div>
-                </div>
-              </td>
-              <td className="py-4 pr-4 text-slate-700">{p.dx}</td>
-              <td className="py-4 pr-4 text-slate-700 capitalize">{p.pe}</td>
-              <td className="py-4 pr-4 text-slate-700">{p.mpio}, {p.dp}</td>
-              <td className="py-4 pr-4"><span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-medium capitalize", riskClasses(p.rk))}>{p.rk}</span></td>
-              <td className="py-4 pr-4"><span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-medium capitalize", statusClasses(p.st))}>{p.st}</span></td>
-              <td className="py-4"><button onClick={() => onSelect(p.id)} className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium hover:bg-slate-50">Ver</button></td>
-            </tr>
-          ))}
+          {notifications.map((item) => {
+            const openAnalysis = item.accion.toLowerCase().includes("analisis");
+
+            return (
+              <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/80">
+                <td className="py-4 pr-4">
+                  <div className="font-medium text-slate-900">{item.evento}</div>
+                  <div className="text-xs text-slate-500">{item.id}</div>
+                </td>
+                <td className="py-4 pr-4 text-slate-700">{item.semana}</td>
+                <td className="py-4 pr-4 text-slate-700">{item.territorio}</td>
+                <td className="py-4 pr-4 text-slate-900">{item.casos}</td>
+                <td className={cn("py-4 pr-4 font-medium", variationClasses(item.variacion))}>{item.variacion}</td>
+                <td className="py-4 pr-4">
+                  <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-medium", behaviorClasses(item.comportamiento))}>
+                    {item.comportamiento}
+                  </span>
+                </td>
+                <td className="py-4 pr-4">
+                  <span className={cn("inline-flex rounded-full border px-3 py-1 text-xs font-medium", alertClasses(item.alerta))}>
+                    {item.alerta}
+                  </span>
+                </td>
+                <td className="py-4">
+                  <button
+                    onClick={() => (openAnalysis ? onAnalytics(item.id) : onSelect(item.id))}
+                    className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    {item.accion}
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
   );
 }
 
-function AppDashboard({ patients, setView, setSelectedPatient }) {
-  const topPatient = patients.find((p) => p.rk === "critico") || patients[0];
+function AppDashboard({ notifications, onSelect, onOpenForm, onOpenAnalytics, onOpenGeovisor, role, setRole }) {
+  const totalNotifications = notifications.reduce((sum, item) => sum + item.casos, 0);
+  const prioritized = notifications.filter((item) => ["Alta", "Critica"].includes(item.alerta)).length;
+  const territories = new Set(notifications.map((item) => item.territorio));
+  const alertTerritories = new Set(notifications.filter((item) => item.alerta === "Alta").map((item) => item.territorio));
+  const averageQuality = `${Math.round(notifications.reduce((sum, item) => sum + Number.parseInt(item.calidad, 10), 0) / notifications.length)}%`;
+  const variationAverage = `+${Math.round(notifications.reduce((sum, item) => sum + parseVariation(item.variacion), 0) / notifications.length)}%`;
+  const recentRows = notifications.slice(0, 4);
+  const prioritizedRows = [...notifications].sort((a, b) => parseVariation(b.variacion) - parseVariation(a.variacion)).slice(0, 4);
+
   return (
     <div className="space-y-8">
-      <section className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-6">
-        <div className="rounded-[32px] bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-8 text-white shadow-xl shadow-slate-900/10 border border-cyan-900/40">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs text-cyan-100 mb-5">
-                <Sparkles className="w-3.5 h-3.5" /> Copiloto Clínico IA activo
+      <RoleSwitcher role={role} setRole={setRole} />
+
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.28fr_0.72fr]">
+        <div className="rounded-[28px] border border-[#173452] bg-[#10263f] p-8 text-white shadow-[0_20px_40px_rgba(15,39,65,0.18)]">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-slate-200">
+            Evento piloto · Falla cardiaca
+          </div>
+          <h2 className="max-w-3xl text-3xl font-semibold tracking-tight xl:text-[2.05rem]">
+            Panorama institucional para la vigilancia de eventos cronicos notificados.
+          </h2>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
+            Visualizacion general del comportamiento de eventos notificados, alertas, tendencias y analisis territorial.
+          </p>
+
+          <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-4">
+            {[
+              ["Semana de corte", "SE 42"],
+              ["Unidades notificadoras", "26 activas"],
+              ["Cobertura territorial", `${territories.size} territorios`],
+              ["Alertas abiertas", `${alertTerritories.size} territorios`],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-[20px] border border-white/10 bg-white/5 px-4 py-4">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-300">{label}</div>
+                <div className="mt-2 text-lg font-semibold">{value}</div>
               </div>
-              <h2 className="text-3xl xl:text-4xl font-semibold tracking-tight leading-tight">Panel clínico institucional con foco en paciente, seguimiento y vigilancia.</h2>
-              <p className="text-slate-300 mt-4 max-w-2xl leading-7">La experiencia clínica integra IA, historial, alertas, ficha, documentos y analítica sin perder claridad operativa para médicos, administradores y semillero.</p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button onClick={() => setView("patient-detail")} className="rounded-2xl bg-cyan-300 text-slate-950 px-5 py-3 text-sm font-semibold hover:bg-cyan-200 transition">Abrir paciente prioritario</button>
-                <button onClick={() => setView("ficha")} className="rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium hover:bg-white/10 transition">Nueva ficha clínica</button>
-              </div>
-            </div>
-            <div className="w-full md:w-80 rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
-              <div className="text-xs uppercase tracking-[0.18em] text-slate-300">Paciente priorizado por IA</div>
-              <div className="mt-4 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-sm font-semibold">{avatar(topPatient.nm)}</div>
-                <div>
-                  <div className="font-semibold">{topPatient.nm}</div>
-                  <div className="text-sm text-slate-300">{topPatient.dx}</div>
-                </div>
-              </div>
-              <div className="mt-4 rounded-2xl bg-black/10 p-4 text-sm text-slate-100 leading-6">Descompensación reciente, patrón de riesgo alto y necesidad de control prioritario durante las próximas 24 horas.</div>
-              <div className="mt-4 flex gap-2 flex-wrap">
-                <span className="rounded-full bg-rose-400/20 px-3 py-1 text-xs text-rose-100">Riesgo crítico</span>
-                <span className="rounded-full bg-amber-400/20 px-3 py-1 text-xs text-amber-100">Atención inmediata</span>
-              </div>
-            </div>
+            ))}
+          </div>
+
+          <div className="mt-7 flex flex-wrap gap-3">
+            <button onClick={onOpenForm} className="rounded-2xl bg-teal-300 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-teal-200">
+              Abrir ficha de notificacion
+            </button>
+            <button
+              onClick={onOpenGeovisor}
+              className="rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-medium text-white hover:bg-white/10"
+            >
+              Ver geovisor conceptual
+            </button>
           </div>
         </div>
 
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div>
-            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Acciones rápidas</h3>
-            <p className="text-sm text-slate-500 mt-1">Acceso directo a funciones clínicas e institucionales</p>
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <Brain className="h-4 w-4 text-teal-700" />
+            Hallazgos epidemiologicos IA
           </div>
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            {[
-              ["Registrar paciente", Plus, "pacientes"],
-              ["Nueva ficha", ClipboardList, "ficha"],
-              ["Subir documento", Upload, "documentos"],
-              ["Ver alertas", TriangleAlert, "alertas"],
-              ["Analítica", ChartColumn, "analitica"],
-              ["Reportes", FileOutput, "reportes"],
-            ].map(([label, Icon, target]) => (
-              <button key={label} onClick={() => setView(target)} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left hover:bg-slate-100 transition">
-                <Icon className="w-5 h-5 text-slate-700 mb-3" />
-                <div className="text-sm font-medium text-slate-900">{label}</div>
+          <p className="mt-2 text-sm text-slate-500">
+            Lectura automatica del corte semanal con foco en variacion territorial y comportamiento inusual.
+          </p>
+          <div className="mt-5 space-y-3">
+            {aiFindings.map((finding) => (
+              <div key={finding} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700">
+                {finding}
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {epidemiologicalPrompts.slice(0, 4).map((prompt) => (
+              <button
+                key={prompt}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                {prompt}
               </button>
             ))}
           </div>
-          <div className="mt-6 rounded-[24px] border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5">
-            <div className="flex items-center gap-2 text-cyan-800 text-sm font-medium"><Brain className="w-4 h-4" /> Inteligencia clínica</div>
-            <p className="mt-3 text-sm text-slate-600 leading-6">Resume el caso, detecta cambios y ayuda a diligenciar fichas sin sacar al médico de su flujo de trabajo.</p>
-          </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard title="Pacientes activos" value="14,237" sub="+8.3% vs trimestre anterior" icon={Users} accent="sky" />
-        <KpiCard title="Alertas clínicas" value="18" sub="5 críticas hoy" icon={TriangleAlert} accent="rose" />
-        <KpiCard title="Fichas pendientes" value="34" sub="Prioridad alta" icon={ClipboardList} accent="amber" />
-        <KpiCard title="Calidad de notificación" value="94%" sub="Meta institucional: 95%" icon={CheckCircle2} accent="emerald" />
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <KpiCard title="Total notificaciones" value={totalNotifications.toLocaleString()} subtitle="Corte agregado SE 42" icon={ClipboardList} accent="cyan" />
+        <KpiCard title="Eventos priorizados" value={prioritized} subtitle="Con alerta alta" icon={TriangleAlert} accent="rose" />
+        <KpiCard title="Municipios en alerta" value={alertTerritories.size} subtitle="Revision territorial" icon={Map} accent="amber" />
+        <KpiCard title="Variacion semanal" value={variationAverage} subtitle="Vs promedio reciente" icon={Activity} accent="teal" />
+        <KpiCard title="Calidad del dato" value={averageQuality} subtitle="Completitud promedio" icon={CheckCircle2} accent="emerald" />
+        <KpiCard title="Cobertura territorial" value={territories.size} subtitle="Territorios con reporte" icon={Gauge} accent="slate" />
       </section>
 
-      <section className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4 mb-6">
+      <section className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="mb-6 flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl font-semibold tracking-tight">Pacientes recientes</h3>
-              <p className="text-sm text-slate-500">Visión operativa del seguimiento diario</p>
+              <h3 className="text-xl font-semibold tracking-tight text-slate-950">Eventos con variacion reciente</h3>
+              <p className="text-sm text-slate-500">Comportamiento semanal de eventos notificados y territorios priorizados.</p>
             </div>
-            <button onClick={() => setView("pacientes")} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50">Ver todos</button>
+            <button
+              onClick={() => onOpenAnalytics(recentRows[0].id)}
+              className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Ver analitica
+            </button>
           </div>
-          <PatientTable patients={patients.slice(0, 6)} onSelect={(id) => { setSelectedPatient(id); setView("patient-detail"); }} />
+          <NotificationTable notifications={recentRows} onSelect={onSelect} onAnalytics={onOpenAnalytics} />
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold tracking-tight">Tendencia de notificación</h3>
-            <p className="text-sm text-slate-500 mt-1">Resumen mensual 2024</p>
-            <div className="mt-6"><MiniBarChart values={[1120, 1240, 1180, 1350, 1420, 1510, 1480, 1560, 1620, 1580, 1640, 1710]} tone="navy" /></div>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Variacion semanal del evento piloto</h3>
+            <p className="mt-1 text-sm text-slate-500">Serie reciente de falla cardiaca notificada en Narino.</p>
+            <div className="mt-6">
+              <MiniTrendChart values={[29, 31, 34, 39, 41, 48]} labels={dashboardWeekLabels} tone="teal" tall />
+            </div>
           </div>
-          <div className="rounded-[32px] border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-6 shadow-sm">
-            <div className="flex items-center gap-2 text-cyan-800 text-sm font-semibold"><Sparkles className="w-4 h-4" /> Copiloto clínico</div>
-            <div className="mt-4 space-y-3">
-              {clinicianPrompts.slice(0, 4).map((q) => (
-                <button key={q} className="w-full rounded-2xl border border-cyan-100 bg-white/80 px-4 py-3 text-left text-sm text-slate-700 hover:bg-white">{q}</button>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Territorios priorizados</h3>
+            <div className="mt-5 space-y-4">
+              {prioritizedRows.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => onSelect(item.id)}
+                  className="w-full rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left hover:bg-slate-100"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="font-medium text-slate-900">{item.territorio}</div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        {item.evento} · {item.semana}
+                      </div>
+                    </div>
+                    <span className={cn("rounded-full border px-3 py-1 text-xs font-medium", alertClasses(item.alerta))}>{item.alerta}</span>
+                  </div>
+                  <div className="mt-3 text-sm text-slate-600">
+                    {item.casos} casos notificados · {item.variacion} frente al promedio reciente.
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -569,71 +985,201 @@ function AppDashboard({ patients, setView, setSelectedPatient }) {
   );
 }
 
-function PatientsView({ patients, filter, setFilter, search, setSearch, onSelect, onCreate }) {
+function NotificationsView({ notifications, onSelect, onCreate, onAnalytics }) {
+  const [search, setSearch] = useState("");
+  const [quickFilter, setQuickFilter] = useState("Todos los eventos");
+  const [weekFilter, setWeekFilter] = useState("Todas");
+  const [departmentFilter, setDepartmentFilter] = useState("Todos");
+  const [municipalityFilter, setMunicipalityFilter] = useState("Todos");
+  const [eventFilter, setEventFilter] = useState("Todos");
+  const [alertFilter, setAlertFilter] = useState("Todos");
+  const deferredSearch = useDeferredValue(search);
+
+  const options = useMemo(
+    () => ({
+      weeks: ["Todas", ...new Set(notifications.map((item) => item.semana))],
+      departments: ["Todos", ...new Set(notifications.map((item) => item.departamento))],
+      municipalities: ["Todos", ...new Set(notifications.map((item) => item.municipio))],
+      events: ["Todos", ...new Set(notifications.map((item) => item.evento))],
+      alerts: ["Todos", ...new Set(notifications.map((item) => item.alerta))],
+    }),
+    [notifications],
+  );
+
   const filtered = useMemo(() => {
-    return patients.filter((p) => {
-      const matchFilter = filter === "todos" || p.rk === filter;
-      const q = search.toLowerCase();
-      const matchSearch = !q || p.nm.toLowerCase().includes(q) || p.dx.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
-      return matchFilter && matchSearch;
+    const query = deferredSearch.trim().toLowerCase();
+
+    return notifications.filter((item) => {
+      const matchesQuick =
+        quickFilter === "Todos los eventos" ||
+        item.evento === quickFilter ||
+        (quickFilter === "En aumento" && parseVariation(item.variacion) > 0) ||
+        (quickFilter === "En observacion" && item.comportamiento === "En observacion") ||
+        (quickFilter === "Estable" && item.comportamiento === "Estable");
+
+      const matchesWeek = weekFilter === "Todas" || item.semana === weekFilter;
+      const matchesDepartment = departmentFilter === "Todos" || item.departamento === departmentFilter;
+      const matchesMunicipality = municipalityFilter === "Todos" || item.municipio === municipalityFilter;
+      const matchesEvent = eventFilter === "Todos" || item.evento === eventFilter;
+      const matchesAlert = alertFilter === "Todos" || item.alerta === alertFilter;
+      const matchesSearch =
+        !query ||
+        item.id.toLowerCase().includes(query) ||
+        item.evento.toLowerCase().includes(query) ||
+        item.territorio.toLowerCase().includes(query) ||
+        item.unidad.toLowerCase().includes(query) ||
+        item.semana.toLowerCase().includes(query);
+
+      return matchesQuick && matchesWeek && matchesDepartment && matchesMunicipality && matchesEvent && matchesAlert && matchesSearch;
     });
-  }, [patients, filter, search]);
+  }, [alertFilter, deferredSearch, departmentFilter, eventFilter, municipalityFilter, notifications, quickFilter, weekFilter]);
+
+  const prioritizedRows = [...filtered].sort((a, b) => parseVariation(b.variacion) - parseVariation(a.variacion)).slice(0, 4);
+  const highAlertCount = filtered.filter((item) => item.alerta === "Alta").length;
+  const observationCount = filtered.filter((item) => item.comportamiento === "En observacion").length;
+  const territoryCount = new Set(filtered.map((item) => item.territorio)).size;
+  const unitCount = new Set(filtered.map((item) => item.unidad)).size;
+
+  const quickOptions = ["Todos los eventos", "Falla cardiaca", "Diabetes T2", "Hipertension", "EPOC", "En aumento", "En observacion", "Estable"];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 min-w-[260px] flex-1 text-sm text-slate-500">
-          <Search className="w-4 h-4" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} className="bg-transparent outline-none w-full" placeholder="Buscar por nombre, diagnóstico o ID..." />
+        <div className="flex min-w-[280px] flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+          <Search className="h-4 w-4" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="w-full bg-transparent outline-none"
+            placeholder="Buscar evento, territorio, semana o unidad notificadora..."
+          />
         </div>
-        <div className="flex flex-wrap gap-2">
-          {["todos", "critico", "alto", "medio", "bajo"].map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={cn("rounded-2xl px-4 py-2 text-sm font-medium border", filter === f ? "bg-slate-950 text-white border-slate-950" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50")}>
-              {f === "todos" ? "Todos" : f}
-            </button>
-          ))}
-        </div>
-        <button onClick={onCreate} className="rounded-2xl bg-cyan-700 text-white px-5 py-3 text-sm font-semibold hover:bg-cyan-800 flex items-center gap-2"><Plus className="w-4 h-4" /> Registrar paciente</button>
+        <button onClick={onCreate} className="flex items-center gap-2 rounded-2xl bg-[#10263f] px-5 py-3 text-sm font-semibold text-white hover:bg-[#173452]">
+          <Plus className="h-4 w-4" />
+          Nueva notificacion
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap gap-2">
+        {quickOptions.map((option) => (
+          <button
+            key={option}
+            onClick={() => setQuickFilter(option)}
+            className={cn(
+              "rounded-2xl border px-4 py-2 text-sm font-medium",
+              quickFilter === option ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+            )}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <select value={weekFilter} onChange={(event) => setWeekFilter(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none">
+          {options.weeks.map((item) => (
+            <option key={item}>{item === "Todas" ? "Semana epidemiologica" : item}</option>
+          ))}
+        </select>
+        <select value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none">
+          {options.departments.map((item) => (
+            <option key={item}>{item === "Todos" ? "Departamento" : item}</option>
+          ))}
+        </select>
+        <select value={municipalityFilter} onChange={(event) => setMunicipalityFilter(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none">
+          {options.municipalities.map((item) => (
+            <option key={item}>{item === "Todos" ? "Municipio" : item}</option>
+          ))}
+        </select>
+        <select value={eventFilter} onChange={(event) => setEventFilter(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none">
+          {options.events.map((item) => (
+            <option key={item}>{item === "Todos" ? "Evento" : item}</option>
+          ))}
+        </select>
+        <select value={alertFilter} onChange={(event) => setAlertFilter(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none">
+          {options.alerts.map((item) => (
+            <option key={item}>{item === "Todos" ? "Nivel de alerta" : item}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1.06fr_0.94fr]">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="mb-6 flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl font-semibold tracking-tight">Gestión de pacientes</h3>
-              <p className="text-sm text-slate-500">Mostrando {filtered.length} de {patients.length} registros</p>
+              <h3 className="text-xl font-semibold tracking-tight text-slate-950">Situacion epidemiologica</h3>
+              <p className="text-sm text-slate-500">
+                Consulta del comportamiento general de eventos notificados, variaciones territoriales, tendencias y alertas epidemiologicas.
+              </p>
+            </div>
+            <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+              {filtered.length} registros visibles
             </div>
           </div>
-          <PatientTable patients={filtered} onSelect={onSelect} />
+
+          <NotificationTable notifications={filtered} onSelect={onSelect} onAnalytics={onAnalytics} />
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-6 shadow-sm">
-            <div className="flex items-center gap-2 text-cyan-800 text-sm font-semibold"><Sparkles className="w-4 h-4" /> IA clínica para médicos</div>
-            <h3 className="mt-4 text-xl font-semibold tracking-tight text-slate-950">Pacientes priorizados hoy</h3>
-            <div className="space-y-3 mt-5">
-              {filtered.slice(0, 4).map((p) => (
-                <button key={p.id} onClick={() => onSelect(p.id)} className="w-full rounded-[22px] border border-cyan-100 bg-white/80 p-4 text-left hover:bg-white">
-                  <div className="flex items-center justify-between gap-3">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Activity className="h-4 w-4 text-teal-700" />
+              Eventos o territorios priorizados
+            </div>
+            <div className="mt-5 space-y-3">
+              {prioritizedRows.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => onSelect(item.id)}
+                  className="w-full rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left hover:bg-slate-100"
+                >
+                  <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="font-medium text-slate-900">{p.nm}</div>
-                      <div className="text-sm text-slate-500">{p.dx}</div>
+                      <div className="font-medium text-slate-900">{item.evento}</div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        {item.territorio} · {item.semana}
+                      </div>
                     </div>
-                    <span className={cn("rounded-full border px-3 py-1 text-xs font-medium capitalize", riskClasses(p.rk))}>{p.rk}</span>
+                    <span className={cn("rounded-full border px-3 py-1 text-xs font-medium", alertClasses(item.alerta))}>{item.alerta}</span>
                   </div>
-                  <div className="text-sm text-slate-600 mt-3">Resumen IA: revisar evolución, adherencia y alertas recientes del caso.</div>
+                  <div className="mt-3 text-sm text-slate-600">
+                    {item.comportamiento} · {item.variacion} frente al promedio historico.
+                  </div>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold tracking-tight">Resumen operativo</h3>
-            <div className="grid grid-cols-2 gap-4 mt-5">
-              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4"><div className="text-sm text-slate-500">Críticos</div><div className="text-2xl font-semibold mt-2">{patients.filter((p) => p.rk === "critico").length}</div></div>
-              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4"><div className="text-sm text-slate-500">Seguimiento semanal</div><div className="text-2xl font-semibold mt-2">{patients.filter((p) => p.pe === "semanal").length}</div></div>
-              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4"><div className="text-sm text-slate-500">Con documentos</div><div className="text-2xl font-semibold mt-2">{docsSeed.length}</div></div>
-              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4"><div className="text-sm text-slate-500">Alertas activas</div><div className="text-2xl font-semibold mt-2">18</div></div>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Resumen operativo</h3>
+            <div className="mt-5 grid grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-sm text-slate-500">Alerta alta</div>
+                <div className="mt-2 text-2xl font-semibold text-slate-950">{highAlertCount}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-sm text-slate-500">En observacion</div>
+                <div className="mt-2 text-2xl font-semibold text-slate-950">{observationCount}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-sm text-slate-500">Territorios</div>
+                <div className="mt-2 text-2xl font-semibold text-slate-950">{territoryCount}</div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-sm text-slate-500">Unidades</div>
+                <div className="mt-2 text-2xl font-semibold text-slate-950">{unitCount}</div>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-medium text-slate-900">Hallazgos automaticos</div>
+              <div className="mt-3 space-y-2">
+                {aiFindings.slice(0, 3).map((finding) => (
+                  <div key={finding} className="text-sm leading-6 text-slate-600">
+                    {finding}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -642,85 +1188,94 @@ function PatientsView({ patients, filter, setFilter, search, setSearch, onSelect
   );
 }
 
-function PatientDetailView({ patient, setView }) {
-  if (!patient) return null;
+function NotificationDetailView({ notification, openView, onBack }) {
+  if (!notification) return null;
+
   return (
     <div className="space-y-6">
-      <button onClick={() => setView("pacientes")} className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50">← Volver a pacientes</button>
-      <div className="grid grid-cols-1 xl:grid-cols-[0.85fr_1.1fr_0.75fr] gap-6">
+      <button onClick={onBack} className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+        Volver a notificaciones
+      </button>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.08fr_0.82fr]">
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-slate-950 to-cyan-900 text-white flex items-center justify-center text-xl font-semibold">{avatar(patient.nm)}</div>
-              <h3 className="mt-4 text-xl font-semibold tracking-tight">{patient.nm}</h3>
-              <p className="text-sm text-slate-500 mt-1">{patient.id} · {patient.ag} años</p>
-              <div className="flex flex-wrap justify-center gap-2 mt-4">
-                <span className={cn("rounded-full border px-3 py-1 text-xs font-medium capitalize", riskClasses(patient.rk))}>{patient.rk}</span>
-                <span className={cn("rounded-full border px-3 py-1 text-xs font-medium capitalize", statusClasses(patient.st))}>{patient.st}</span>
-                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium capitalize">{patient.pe}</span>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div className="rounded-2xl bg-[#10263f] p-5 text-white">
+              <div className="text-xs uppercase tracking-[0.18em] text-slate-300">Detalle de notificacion</div>
+              <div className="mt-2 text-2xl font-semibold tracking-tight">{notification.evento}</div>
+              <div className="mt-1 text-sm text-slate-300">{notification.id}</div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className={cn("rounded-full border px-3 py-1 text-xs font-medium", behaviorClasses(notification.comportamiento))}>
+                  {notification.comportamiento}
+                </span>
+                <span className={cn("rounded-full border px-3 py-1 text-xs font-medium", alertClasses(notification.alerta))}>
+                  {notification.alerta}
+                </span>
               </div>
             </div>
-            <div className="mt-6 space-y-3">
+
+            <div className="mt-5 space-y-3">
               {[
-                ["Diagnóstico", patient.dx],
-                ["EPS", patient.eps],
-                ["Municipio", `${patient.mpio}, ${patient.dp}`],
-                ["Documento", patient.doc],
-                ["IMC", `${patient.imc} kg/m²`],
-                ["Medicación", patient.medicacion],
-              ].map(([k, v]) => (
-                <div key={k} className="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3">
-                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{k}</div>
-                  <div className="text-sm text-slate-900 mt-2 leading-6">{v}</div>
+                ["Codigo de notificacion", notification.id],
+                ["Semana epidemiologica", notification.semana],
+                ["Territorio", notification.territorio],
+                ["Unidad notificadora", notification.unidad],
+                ["Fecha de notificacion", notification.fechaNotificacion],
+                ["Clasificacion del caso", notification.clasificacion],
+                ["Casos notificados", String(notification.casos)],
+                ["Variacion frente al historico", notification.variacion],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
+                  <div className="mt-2 text-sm leading-6 text-slate-900">{value}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold tracking-tight">Indicadores clínicos</h3>
-            <div className="space-y-4 mt-5">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Datos sociodemograficos minimos</h3>
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
-                ["Glucosa", "178 mg/dL", 78, "bg-amber-500"],
-                ["HbA1c", "8.2%", 82, "bg-rose-500"],
-                ["TA", "135/88", 62, "bg-orange-500"],
-                ["SpO2", "94%", 94, "bg-emerald-500"],
-              ].map(([label, value, pct, tone]) => (
-                <div key={label}>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-600">{label}</span>
-                    <span className="font-medium text-slate-950">{value}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                    <div className={cn("h-full rounded-full", tone)} style={{ width: `${pct}%` }} />
-                  </div>
+                ["Sexo", notification.sexo],
+                ["Grupo etario", notification.grupoEtario],
+                ["Aseguramiento", notification.aseguramiento],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">{value}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="mb-6 flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl font-semibold tracking-tight">Historial clínico y epidemiológico</h3>
-              <p className="text-sm text-slate-500">Línea de tiempo del paciente</p>
+              <h3 className="text-xl font-semibold tracking-tight text-slate-950">Trazabilidad de validaciones</h3>
+              <p className="text-sm text-slate-500">Secuencia de controles aplicados a la notificacion.</p>
             </div>
-            <button className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50 flex items-center gap-2"><Filter className="w-4 h-4" /> Filtrar</button>
+            <button className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              <Filter className="h-4 w-4" />
+              Filtrar
+            </button>
           </div>
+
           <div className="space-y-4">
-            {historyItems.map((item, idx) => (
-              <div key={idx} className="flex gap-4">
+            {notification.validaciones.map((item, index) => (
+              <div key={`${item.titulo}-${item.fecha}`} className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="w-4 h-4 rounded-full bg-slate-950 mt-1" />
-                  {idx !== historyItems.length - 1 && <div className="w-px flex-1 bg-slate-200 mt-2" />}
+                  <div className="mt-1 h-4 w-4 rounded-full bg-slate-900" />
+                  {index !== notification.validaciones.length - 1 ? <div className="mt-2 h-full w-px bg-slate-200" /> : null}
                 </div>
-                <div className={cn("flex-1 rounded-[24px] border p-4", toneClasses(item.tone))}>
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                    <div className="font-medium">{item.t}</div>
-                    <div className="text-xs opacity-80">{item.dt}</div>
+                <div className="flex-1 rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="font-medium text-slate-900">{item.titulo}</div>
+                    <span className={cn("rounded-full border px-3 py-1 text-xs font-medium", validationClasses(item.estado))}>{item.estado}</span>
                   </div>
-                  <p className="text-sm leading-6 opacity-90">{item.d}</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{item.detalle}</p>
+                  <div className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">{item.fecha}</div>
                 </div>
               </div>
             ))}
@@ -728,32 +1283,56 @@ function PatientDetailView({ patient, setView }) {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-6 shadow-sm">
-            <div className="flex items-center gap-2 text-cyan-800 text-sm font-semibold"><Sparkles className="w-4 h-4" /> Copiloto Clínico IA</div>
-            <h3 className="mt-4 text-xl font-semibold tracking-tight text-slate-950">Resumen del caso</h3>
-            <div className="space-y-3 mt-5">
-              {[
-                "Control clínico subóptimo y riesgo de descompensación por comorbilidades asociadas.",
-                "Factores de riesgo combinados: sobrecarga clínica, antecedente cardiovascular y progresión reciente.",
-                "Existe patrón compatible con necesidad de intensificar seguimiento médico.",
-                "Se sugiere control temprano, revisión terapéutica y vigilancia de laboratorio.",
-              ].map((line) => (
-                <div key={line} className="rounded-2xl border border-cyan-100 bg-white/80 px-4 py-3 text-sm text-slate-700 leading-6">{line}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-2 gap-3 mt-5">
-              {clinicianPrompts.slice(0, 4).map((q) => (
-                <button key={q} className="rounded-2xl bg-slate-950 text-white px-4 py-3 text-sm font-medium hover:bg-slate-800">{q}</button>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Variables principales</h3>
+            <div className="mt-5 space-y-3">
+              {notification.variables.map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">{value}</div>
+                </div>
               ))}
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold tracking-tight">Acciones</h3>
-            <div className="space-y-3 mt-5">
-              <button onClick={() => setView("ficha")} className="w-full rounded-2xl bg-cyan-700 text-white px-4 py-3 text-sm font-semibold hover:bg-cyan-800 flex items-center justify-between">Nueva ficha clínica <ArrowRight className="w-4 h-4" /></button>
-              <button onClick={() => setView("documentos")} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50 flex items-center justify-between">Cargar documento <ArrowRight className="w-4 h-4" /></button>
-              <button onClick={() => setView("reportes")} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50 flex items-center justify-between">Exportar reporte <ArrowRight className="w-4 h-4" /></button>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Brain className="h-4 w-4 text-teal-700" />
+              Hallazgos automaticos
+            </div>
+            <div className="mt-4 space-y-3">
+              {notification.hallazgos.map((line) => (
+                <div key={line} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+                  {line}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Acciones</h3>
+            <div className="mt-5 space-y-3">
+              <button
+                onClick={() => openView("ficha")}
+                className="flex w-full items-center justify-between rounded-2xl bg-[#10263f] px-4 py-3 text-sm font-semibold text-white hover:bg-[#173452]"
+              >
+                Abrir ficha de notificacion
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => openView("soportes")}
+                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Ver soportes de notificacion
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => openView("analitica")}
+                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Abrir analitica territorial
+                <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -762,95 +1341,122 @@ function PatientDetailView({ patient, setView }) {
   );
 }
 
-function FichaView() {
-  const steps = ["Paciente", "Notificación", "Clasificación", "Factores", "Laboratorio", "Acciones", "Seguimiento"];
+function NotificationFormView() {
+  const steps = [
+    "Identificacion de la notificacion",
+    "Evento de interes",
+    "Datos sociodemograficos minimos",
+    "Territorio",
+    "Unidad notificadora",
+    "Factores asociados",
+    "Clasificacion del caso",
+    "Validacion",
+  ];
+
+  const sections = [
+    ["Codigo de notificacion", "EV-00XX"],
+    ["Semana epidemiologica", "SE 42"],
+    ["Evento", "Falla cardiaca"],
+    ["Fecha de notificacion", "15/11/2024"],
+    ["Departamento", "Narino"],
+    ["Municipio", "Pasto"],
+    ["Unidad notificadora", "Hospital Universitario Departamental"],
+    ["Clasificacion del caso", "Caso confirmado"],
+    ["Sexo", "Masculino / Femenino"],
+    ["Grupo etario", "50 a 64 / 65 y mas"],
+    ["Factores asociados", "HTA, diabetes, antecedente cardiovascular"],
+    ["Observaciones", "Resumen tecnico de la notificacion"],
+  ];
+
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[1fr_0.85fr] gap-6">
-      <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4 mb-6">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.86fr]">
+      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <h3 className="text-xl font-semibold tracking-tight">Ficha clínica estandarizada</h3>
-            <p className="text-sm text-slate-500">Versión moderna con validación y mejor jerarquía visual</p>
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Ficha de notificacion epidemiologica</h3>
+            <p className="text-sm text-slate-500">Estructura estandarizada para eventos cronicos notificados.</p>
           </div>
-          <div className="rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Completitud estimada 76%</div>
+          <div className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+            Completitud estimada 76%
+          </div>
         </div>
 
-        <div className="flex gap-3 overflow-x-auto pb-2 mb-8">
-          {steps.map((step, i) => (
-            <div key={step} className="flex items-center gap-3 min-w-fit">
-              <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-semibold border", i < 3 ? "bg-cyan-700 text-white border-cyan-700" : i === 3 ? "bg-cyan-50 text-cyan-800 border-cyan-200" : "bg-slate-50 text-slate-500 border-slate-200")}>{i + 1}</div>
+        <div className="mb-8 flex gap-3 overflow-x-auto pb-2">
+          {steps.map((step, index) => (
+            <div key={step} className="flex min-w-fit items-center gap-3">
+              <div
+                className={cn(
+                  "flex h-11 w-11 items-center justify-center rounded-2xl border text-sm font-semibold",
+                  index < 4 ? "border-cyan-700 bg-cyan-700 text-white" : "border-slate-200 bg-slate-50 text-slate-500",
+                )}
+              >
+                {index + 1}
+              </div>
               <div className="text-sm font-medium text-slate-700">{step}</div>
-              {i !== steps.length - 1 && <div className="w-10 h-px bg-slate-200" />}
+              {index !== steps.length - 1 ? <div className="h-px w-8 bg-slate-200" /> : null}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            ["Tipo de identificación", "Seleccione tipo"],
-            ["Número de documento", "Ej: 1098765432"],
-            ["Nombre completo", "Nombres y apellidos"],
-            ["Fecha de nacimiento", "DD/MM/AAAA"],
-            ["Evento o diagnóstico", "Seleccione evento"],
-            ["Profesional que registra", "Nombre del profesional"],
-            ["Institución notificadora", "Seleccione institución"],
-            ["Fecha de notificación", "DD/MM/AAAA"],
-            ["Clasificación del caso", "Seleccione"],
-            ["Periodicidad", "Semanal / inmediata"],
-            ["Municipio", "Ej: Pasto"],
-            ["Observaciones clínicas", "Resumen del caso"],
-          ].map(([label, placeholder]) => (
-            <div key={label} className={label === "Observaciones clínicas" ? "md:col-span-2" : ""}>
-              <div className="text-sm font-medium text-slate-700 mb-2">{label}</div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-400 min-h-[48px] flex items-center">{placeholder}</div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {sections.map(([label, placeholder]) => (
+            <div key={label} className={label === "Observaciones" ? "md:col-span-2" : ""}>
+              <div className="mb-2 text-sm font-medium text-slate-700">{label}</div>
+              <div className="flex min-h-[48px] items-center rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-400">
+                {placeholder}
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="flex justify-between mt-8 pt-6 border-t border-slate-200">
-          <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50">Anterior</button>
+        <div className="mt-8 flex justify-between border-t border-slate-200 pt-6">
+          <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Anterior</button>
           <div className="flex gap-3">
-            <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50">Guardar borrador</button>
-            <button className="rounded-2xl bg-cyan-700 text-white px-5 py-3 text-sm font-semibold hover:bg-cyan-800">Notificar ficha</button>
+            <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+              Guardar borrador
+            </button>
+            <button className="rounded-2xl bg-[#10263f] px-5 py-3 text-sm font-semibold text-white hover:bg-[#173452]">Enviar notificacion</button>
           </div>
         </div>
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-[32px] border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 text-cyan-800 text-sm font-semibold"><Sparkles className="w-4 h-4" /> Asistencia inteligente</div>
-          <h3 className="mt-4 text-xl font-semibold tracking-tight text-slate-950">Apoyo al diligenciamiento</h3>
-          <div className="space-y-3 mt-5">
-            {[
-              "Faltan datos completos de clasificación del caso.",
-              "Se detecta coherencia parcial entre diagnóstico y periodicidad seleccionada.",
-              "La IA sugiere marcar factor de riesgo por antecedente hipertensivo.",
-              "Puede generarse un resumen breve de notificación con un clic.",
-            ].map((line) => (
-              <div key={line} className="rounded-2xl border border-cyan-100 bg-white/80 px-4 py-3 text-sm text-slate-700 leading-6">{line}</div>
-            ))}
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <Brain className="h-4 w-4 text-teal-700" />
+            Asistente de analisis epidemiologico
           </div>
-          <div className="grid grid-cols-2 gap-3 mt-5">
-            {["Completar campos", "Resumir caso", "Validar consistencia", "Sugerir riesgos"].map((action) => (
-              <button key={action} className="rounded-2xl bg-slate-950 text-white px-4 py-3 text-sm font-medium hover:bg-slate-800">{action}</button>
+          <h3 className="mt-4 text-xl font-semibold tracking-tight text-slate-950">Apoyo al diligenciamiento</h3>
+          <div className="mt-5 space-y-3">
+            {[
+              "Faltan datos de clasificacion del caso para cerrar la ficha.",
+              "La semana epidemiologica y la fecha de notificacion son consistentes.",
+              "La unidad notificadora cumple con el directorio institucional.",
+              "Se recomienda revisar oportunidad de cargue y variables asociadas.",
+            ].map((line) => (
+              <div key={line} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+                {line}
+              </div>
             ))}
           </div>
         </div>
 
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold tracking-tight">Checklist de validación</h3>
-          <div className="space-y-3 mt-5">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-950">Checklist de validacion</h3>
+          <div className="mt-5 space-y-3">
             {[
-              ["Identificación completa", true],
-              ["Evento seleccionado", true],
-              ["Datos de notificación", true],
-              ["Factores de riesgo", false],
-              ["Resultados de laboratorio", false],
-              ["Seguimiento definido", true],
+              ["Identificacion completa", true],
+              ["Evento de interes", true],
+              ["Territorio y unidad", true],
+              ["Factores asociados", false],
+              ["Clasificacion del caso", false],
+              ["Validacion final", false],
             ].map(([label, ok]) => (
               <div key={label} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <div className="text-sm text-slate-700">{label}</div>
-                <span className={cn("rounded-full px-3 py-1 text-xs font-medium", ok ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700")}>{ok ? "Completo" : "Pendiente"}</span>
+                <span className={cn("rounded-full px-3 py-1 text-xs font-medium", ok ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700")}>
+                  {ok ? "Completo" : "Pendiente"}
+                </span>
               </div>
             ))}
           </div>
@@ -860,64 +1466,153 @@ function FichaView() {
   );
 }
 
-function DocumentsView() {
+function DataValidationView({ notifications }) {
+  const validations = [
+    ["Completitud general", "94%", "Meta institucional de 95%"],
+    ["Oportunidad de cargue", "91%", "Tres UPGD con retraso mayor a 48 horas"],
+    ["Consistencia territorial", "97%", "Coincidencia entre unidad y territorio"],
+    ["Duplicados", "0.8%", "Revision semanal automatizada"],
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        {validations.map(([label, value, sub], index) => (
+          <KpiCard
+            key={label}
+            title={label}
+            value={value}
+            subtitle={sub}
+            icon={[CheckCircle2, CalendarDays, Map, ShieldCheck][index]}
+            accent={["emerald", "amber", "cyan", "slate"][index]}
+          />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_0.9fr]">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-950">Validaciones activas</h3>
+          <div className="mt-5 space-y-3">
+            {[
+              ["Coherencia entre semana epidemiologica y fecha de notificacion", "Activa"],
+              ["Cruce de territorio con directorio de unidades notificadoras", "Activa"],
+              ["Control de duplicados por codigo y territorio", "Activa"],
+              ["Revision de retrasos de cargue por UPGD", "Activa"],
+              ["Seguimiento de variables obligatorias", "Activa"],
+            ].map(([rule, status]) => (
+              <div key={rule} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <div className="text-sm text-slate-700">{rule}</div>
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">{status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-950">Registros en revision</h3>
+          <div className="mt-5 space-y-3">
+            {notifications
+              .filter((item) => item.validaciones.some((validation) => validation.estado !== "Validada"))
+              .slice(0, 5)
+              .map((item) => (
+                <div key={item.id} className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-medium text-slate-900">{item.id}</div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        {item.evento} · {item.territorio}
+                      </div>
+                    </div>
+                    <span className={cn("rounded-full border px-3 py-1 text-xs font-medium", alertClasses(item.alerta))}>{item.alerta}</span>
+                  </div>
+                  <div className="mt-3 text-sm text-slate-600">{item.validaciones.find((validation) => validation.estado !== "Validada")?.detalle}</div>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SupportFilesView() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 min-w-[260px] flex-1 text-slate-500 text-sm"><Search className="w-4 h-4" /> Buscar documento o paciente...</div>
-        <button className="rounded-2xl bg-cyan-700 text-white px-5 py-3 text-sm font-semibold hover:bg-cyan-800 flex items-center gap-2"><Upload className="w-4 h-4" /> Cargar documento</button>
+        <div className="flex min-w-[280px] flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+          <Search className="h-4 w-4" />
+          <span>Buscar soporte, unidad notificadora o codigo...</span>
+        </div>
+        <button className="flex items-center gap-2 rounded-2xl bg-[#10263f] px-5 py-3 text-sm font-semibold text-white hover:bg-[#173452]">
+          <Upload className="h-4 w-4" />
+          Cargar soporte
+        </button>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-        {docsSeed.map((d) => (
-          <div key={d.nm} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center mb-4"><FileText className="w-5 h-5" /></div>
-            <div className="font-medium text-slate-900 leading-6">{d.nm}</div>
-            <div className="text-sm text-slate-500 mt-2">{d.tp} · {d.sz}</div>
-            <div className="text-sm text-slate-500 mt-1">{d.pac} · {d.dt}</div>
-            <div className="grid grid-cols-2 gap-3 mt-5">
-              <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50 flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Descargar</button>
-              <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50 flex items-center justify-center gap-2"><Eye className="w-4 h-4" /> Ver</button>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {supportFilesSeed.map((file) => (
+          <div key={file.nombre} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100 bg-cyan-50 text-cyan-700">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div className="font-medium leading-6 text-slate-900">{file.nombre}</div>
+            <div className="mt-2 text-sm text-slate-500">
+              {file.tipo} · {file.tamano}
+            </div>
+            <div className="mt-1 text-sm text-slate-500">
+              {file.unidad} · {file.fecha}
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <Download className="h-4 w-4" />
+                Descargar
+              </button>
+              <button className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                <Eye className="h-4 w-4" />
+                Ver
+              </button>
             </div>
           </div>
         ))}
-      </div>
-      <div className="rounded-[32px] border-2 border-dashed border-cyan-200 bg-cyan-50 p-10 text-center">
-        <Upload className="w-10 h-10 text-cyan-700 mx-auto" />
-        <div className="mt-4 text-lg font-semibold text-slate-900">Arrastra aquí archivos PDF, JPG, PNG o DICOM</div>
-        <div className="text-sm text-slate-500 mt-2">Carga moderna con zona drag & drop, vista previa y metadatos clínicos.</div>
       </div>
     </div>
   );
 }
 
 function AlertsView() {
-  const alerts = [
-    ["Miguel A. Orozco", "Falla cardiaca descompensada — supera umbral crítico", "critico"],
-    ["Jorge E. Castillo", "Creatinina: 3.2 mg/dL — deterioro renal", "critico"],
-    ["Ana L. Mendoza", "FEV1: 42% — exacerbación EPOC", "alto"],
-    ["Roberto Díaz V.", "TA 180/110 mmHg — crisis hipertensiva", "alto"],
-    ["María González P.", "HbA1c 8.2% — meta no alcanzada", "medio"],
-  ];
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2">
-        {["Todas", "Críticas", "Altas", "Medias"].map((f, i) => (
-          <button key={f} className={cn("rounded-2xl px-4 py-2 text-sm font-medium border", i === 0 ? "bg-slate-950 text-white border-slate-950" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50")}>{f}</button>
+      <div className="flex flex-wrap gap-2">
+        {["Todas", "Altas", "Medias", "Bajas"].map((item, index) => (
+          <button
+            key={item}
+            className={cn(
+              "rounded-2xl border px-4 py-2 text-sm font-medium",
+              index === 0 ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+            )}
+          >
+            {item}
+          </button>
         ))}
       </div>
+
       <div className="grid grid-cols-1 gap-4">
-        {alerts.map(([name, msg, level]) => (
-          <div key={name} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className={cn("rounded-full border px-3 py-1 text-xs font-medium capitalize", riskClasses(level))}>{level}</span>
-                <span className="text-sm text-slate-500">Paciente: {name}</span>
+        {alertsSeed.map((alert) => (
+          <div key={`${alert.evento}-${alert.territorio}`} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className={cn("rounded-full border px-3 py-1 text-xs font-medium", alertClasses(alert.nivel))}>{alert.nivel}</span>
+                  <span className="text-sm text-slate-500">
+                    {alert.evento} · {alert.territorio} · {alert.semana}
+                  </span>
+                </div>
+                <div className="mt-4 text-base font-medium text-slate-900">{alert.mensaje}</div>
               </div>
-              <div className="mt-4 text-base font-medium text-slate-900">{msg}</div>
-            </div>
-            <div className="flex gap-3">
-              <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50">Atender</button>
-              <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50">Abrir caso</button>
+              <div className="flex gap-3">
+                <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Ver analisis</button>
+                <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Abrir detalle</button>
+              </div>
             </div>
           </div>
         ))}
@@ -927,57 +1622,75 @@ function AlertsView() {
 }
 
 function AnalyticsView() {
-  const max = Math.max(...departments.map((d) => d.c));
+  const max = Math.max(...departments.map((department) => department.c));
   const top = [...departments].sort((a, b) => b.c - a.c).slice(0, 8);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 min-w-[220px] text-sm text-slate-500"><Map className="w-4 h-4" /> Todo el país</div>
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 min-w-[220px] text-sm text-slate-500"><HeartPulse className="w-4 h-4" /> Todas las enfermedades</div>
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 min-w-[220px] text-sm text-slate-500"><CalendarDays className="w-4 h-4" /> Últimos 12 meses</div>
-        <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50 flex items-center gap-2"><Download className="w-4 h-4" /> PDF</button>
-        <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50 flex items-center gap-2"><Download className="w-4 h-4" /> Excel</button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-        <KpiCard title="Total casos" value="18,942" sub="Cohorte agregada" icon={ClipboardList} accent="sky" />
-        <KpiCard title="Tasa x 100k" value="367.2" sub="Ajustada" icon={Gauge} accent="amber" />
-        <KpiCard title="Municipios" value="842" sub="Con registros" icon={Map} accent="emerald" />
-        <KpiCard title="Letalidad" value="3.2‰" sub="Promedio cohorte" icon={Flame} accent="rose" />
-        <KpiCard title="Calidad" value="94%" sub="Notificación válida" icon={CheckCircle2} accent="violet" />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-6">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-xl font-semibold tracking-tight">Mapa de calor territorial</h3>
-              <p className="text-sm text-slate-500">Concentración de casos por territorio</p>
-            </div>
+        {[
+          [Map, "Cobertura nacional"],
+          [HeartPulse, "Evento piloto: Falla cardiaca"],
+          [CalendarDays, "Ultimas 12 semanas"],
+        ].map(([Icon, label]) => (
+          <div key={label} className="flex min-w-[220px] items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+            <Icon className="h-4 w-4" />
+            {label}
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {departments.map((d) => (
-              <div key={d.n} className={cn("rounded-2xl p-4 min-h-[82px] flex flex-col justify-between", heatClass(d.c, max))}>
-                <div className="text-sm font-medium leading-5">{d.n}</div>
-                <div className="text-xs opacity-90 mt-2">{d.c.toLocaleString()} casos</div>
+        ))}
+        <button className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <Download className="h-4 w-4" />
+          PDF
+        </button>
+        <button className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+          <Download className="h-4 w-4" />
+          Excel
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <KpiCard title="Total casos" value="18,942" subtitle="Consolidado agregado" icon={ClipboardList} accent="cyan" />
+        <KpiCard title="Tasa por 100 mil" value="367.2" subtitle="Referencia poblacional" icon={Gauge} accent="amber" />
+        <KpiCard title="Municipios" value="842" subtitle="Con reporte historico" icon={Map} accent="emerald" />
+        <KpiCard title="Variacion piloto" value="+12.4%" subtitle="Falla cardiaca" icon={Activity} accent="rose" />
+        <KpiCard title="Calidad" value="94%" subtitle="Dato valido" icon={CheckCircle2} accent="slate" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-950">Mapa de calor territorial</h3>
+          <p className="mt-1 text-sm text-slate-500">Concentracion agregada por departamento.</p>
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {departments.map((department) => (
+              <div key={department.n} className={cn("flex min-h-[82px] flex-col justify-between rounded-2xl p-4", heatClass(department.c, max))}>
+                <div className="text-sm font-medium leading-5">{department.n}</div>
+                <div className="mt-2 text-xs opacity-90">{department.c.toLocaleString()} casos</div>
               </div>
             ))}
           </div>
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold tracking-tight">Tendencia temporal</h3>
-            <p className="text-sm text-slate-500 mt-1">Comportamiento mensual 2024</p>
-            <div className="mt-6"><MiniBarChart values={[1120, 1240, 1180, 1350, 1420, 1510, 1480, 1560, 1620, 1580, 1640, 1710]} tone="teal" /></div>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Tendencia del evento piloto</h3>
+            <p className="mt-1 text-sm text-slate-500">Serie mensual de referencia.</p>
+            <div className="mt-6">
+              <MiniTrendChart values={[180, 196, 210, 224, 235, 248, 255, 266, 274, 281, 290, 302]} labels={monthLabels} tone="teal" tall />
+            </div>
           </div>
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold tracking-tight">Top territorios</h3>
-            <div className="space-y-3 mt-5">
-              {top.map((d) => (
-                <div key={d.n}>
-                  <div className="flex justify-between text-sm mb-2"><span className="text-slate-600">{d.n}</span><span className="font-medium">{d.c.toLocaleString()}</span></div>
-                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden"><div className="h-full rounded-full bg-slate-900" style={{ width: `${(d.c / max) * 100}%` }} /></div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Top territorios</h3>
+            <div className="mt-5 space-y-3">
+              {top.map((department) => (
+                <div key={department.n}>
+                  <div className="mb-2 flex justify-between text-sm">
+                    <span className="text-slate-600">{department.n}</span>
+                    <span className="font-medium text-slate-950">{department.c.toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-[#10263f]" style={{ width: `${(department.c / max) * 100}%` }} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -985,32 +1698,108 @@ function AnalyticsView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold tracking-tight">Grupos etarios</h3>
-          <div className="mt-5"><MiniBarChart values={[45, 210, 580, 1240, 2100, 3200, 3800, 2900, 1867, 1460, 1200, 980]} tone="amber" /></div>
-        </div>
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold tracking-tight">Por diagnóstico</h3>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-950">Distribucion por evento</h3>
           <div className="mt-5 space-y-3">
-            {diseases.slice(0, 6).map((d, i) => (
-              <div key={d} className="flex items-center justify-between text-sm border-b border-slate-100 pb-3">
-                <span className="text-slate-600">{d}</span>
-                <span className="font-medium">{[5200, 4100, 1800, 1400, 2100, 1600][i]}</span>
+            {eventCatalog.map((event, index) => (
+              <div key={event} className="flex items-center justify-between border-b border-slate-100 pb-3 text-sm">
+                <span className="text-slate-600">{event}</span>
+                <span className="font-medium text-slate-950">{[2480, 5200, 4100, 1800, 1420, 960][index]}</span>
               </div>
             ))}
           </div>
         </div>
-        <div className="rounded-[32px] border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-6 shadow-sm">
-          <div className="flex items-center gap-2 text-cyan-800 text-sm font-semibold"><Brain className="w-4 h-4" /> Insight IA</div>
-          <h3 className="text-xl font-semibold tracking-tight mt-4">Lectura epidemiológica</h3>
-          <div className="space-y-3 mt-5">
+
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-950">Grupos etarios</h3>
+          <div className="mt-6">
+            <MiniTrendChart values={[45, 120, 210, 580, 1240, 2100, 3200, 2800, 1850, 1240, 980, 640]} labels={monthLabels} tone="amber" tall />
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <Brain className="h-4 w-4 text-teal-700" />
+            Analisis epidemiologico
+          </div>
+          <div className="mt-5 space-y-3">
+            {aiFindings.slice(0, 3).map((line) => (
+              <div key={line} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+                {line}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GeovisorView() {
+  return (
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.06fr_0.94fr]">
+      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Geovisor conceptual</h3>
+            <p className="text-sm text-slate-500">Exploracion territorial del evento piloto con filtros institucionales.</p>
+          </div>
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Interactivo</span>
+        </div>
+
+        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+          {["Falla cardiaca", "Municipio", "SE 42", "Todos los sexos"].map((item) => (
+            <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              {item}
+            </div>
+          ))}
+        </div>
+
+        <div className="relative min-h-[420px] overflow-hidden rounded-[24px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(20,184,166,0.15),_transparent_30%),linear-gradient(180deg,#f8fafc_0%,#e2e8f0_100%)] p-4">
+          <div className="absolute left-10 top-8 rounded-full bg-rose-500 px-3 py-1 text-xs font-medium text-white shadow">Pasto</div>
+          <div className="absolute left-24 top-24 rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white shadow">Tumaco</div>
+          <div className="absolute right-20 top-16 rounded-full bg-amber-400 px-3 py-1 text-xs font-medium text-slate-900 shadow">Ipiales</div>
+          <div className="absolute bottom-20 left-24 rounded-full bg-orange-400 px-3 py-1 text-xs font-medium text-slate-900 shadow">Tuquerres</div>
+          <div className="absolute bottom-16 right-28 rounded-full bg-emerald-400 px-3 py-1 text-xs font-medium text-slate-900 shadow">La Union</div>
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">Mapa de referencia conceptual para exploracion territorial</div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-950">Detalle por municipio</h3>
+          <div className="mt-5 space-y-3">
             {[
-              "Se observa concentración alta en Bogotá D.C., Antioquia y Valle del Cauca.",
-              "La carga de casos aumenta en cohortes mayores de 50 años.",
-              "La IA sugiere reforzar análisis por patrones de multimorbilidad y acceso territorial.",
-            ].map((line) => (
-              <div key={line} className="rounded-2xl border border-cyan-100 bg-white/80 px-4 py-3 text-sm text-slate-700 leading-6">{line}</div>
+              ["Pasto", "Muy alto", "Zona urbana", 1240],
+              ["Tumaco", "Alto", "Costa pacifica", 860],
+              ["Ipiales", "Medio", "Zona fronteriza", 540],
+              ["Tuquerres", "Medio", "Altiplano", 380],
+              ["La Union", "Bajo", "Centro occidente", 210],
+              ["Samaniego", "Bajo", "Cordillera", 160],
+            ].map(([name, level, zone, value]) => (
+              <div key={name} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div>
+                  <div className="font-medium text-slate-900">{name}</div>
+                  <div className="text-sm text-slate-500">{zone}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-slate-900">{value}</div>
+                  <div className="text-xs text-slate-500">{level}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-950">Capas disponibles</h3>
+          <div className="mt-5 space-y-3">
+            {["Concentracion de notificaciones", "Canal esperado vs observado", "Cobertura por UPGD", "Retraso de cargue", "Calidad del dato"].map((layer) => (
+              <div key={layer} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="text-sm text-slate-700">{layer}</div>
+                <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white">Visible</span>
+              </div>
             ))}
           </div>
         </div>
@@ -1023,39 +1812,43 @@ function ReportsView() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 min-w-[260px] flex-1 text-sm text-slate-500"><Search className="w-4 h-4" /> Buscar reporte...</div>
-        <button className="rounded-2xl bg-cyan-700 text-white px-5 py-3 text-sm font-semibold hover:bg-cyan-800">Generar reporte</button>
-        <button className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50">Informe trimestral</button>
+        <div className="flex min-w-[280px] flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+          <Search className="h-4 w-4" />
+          <span>Buscar reporte, boletin o consolidado...</span>
+        </div>
+        <button className="rounded-2xl bg-[#10263f] px-5 py-3 text-sm font-semibold text-white hover:bg-[#173452]">Generar reporte</button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KpiCard title="Total reportes" value="312" sub="Históricos" icon={FileOutput} accent="sky" />
-        <KpiCard title="Automáticos activos" value="8" sub="Programados" icon={Activity} accent="emerald" />
-        <KpiCard title="Descargados hoy" value="24" sub="Consumo actual" icon={Download} accent="violet" />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <KpiCard title="Total reportes" value="312" subtitle="Historicos" icon={FileOutput} accent="cyan" />
+        <KpiCard title="Automaticos activos" value="8" subtitle="Programados" icon={Activity} accent="emerald" />
+        <KpiCard title="Descargas hoy" value="24" subtitle="Consumo institucional" icon={Download} accent="slate" />
       </div>
-      <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm overflow-x-auto">
-        <table className="w-full text-sm">
+
+      <div className="overflow-x-auto rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left text-slate-500">
               <th className="py-4 pr-4 font-medium">Nombre</th>
               <th className="py-4 pr-4 font-medium">Formato</th>
-              <th className="py-4 pr-4 font-medium">Tamaño</th>
+              <th className="py-4 pr-4 font-medium">Tamano</th>
               <th className="py-4 pr-4 font-medium">Fecha</th>
               <th className="py-4 pr-4 font-medium">Tipo</th>
               <th className="py-4 font-medium">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {reportsSeed.map((r) => (
-              <tr key={r.nm} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="py-4 pr-4 font-medium text-slate-900">{r.nm}</td>
-                <td className="py-4 pr-4 text-slate-700">{r.fmt}</td>
-                <td className="py-4 pr-4 text-slate-700">{r.sz}</td>
-                <td className="py-4 pr-4 text-slate-700">{r.dt}</td>
-                <td className="py-4 pr-4 text-slate-700">{r.tp}</td>
+            {reportsSeed.map((report) => (
+              <tr key={report.nombre} className="border-b border-slate-100 hover:bg-slate-50/80">
+                <td className="py-4 pr-4 font-medium text-slate-900">{report.nombre}</td>
+                <td className="py-4 pr-4 text-slate-700">{report.formato}</td>
+                <td className="py-4 pr-4 text-slate-700">{report.tamano}</td>
+                <td className="py-4 pr-4 text-slate-700">{report.fecha}</td>
+                <td className="py-4 pr-4 text-slate-700">{report.tipo}</td>
                 <td className="py-4">
                   <div className="flex gap-2">
-                    <button className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium hover:bg-slate-50">Descargar</button>
-                    <button className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium hover:bg-slate-50">Ver</button>
+                    <button className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">Descargar</button>
+                    <button className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">Ver</button>
                   </div>
                 </td>
               </tr>
@@ -1069,31 +1862,87 @@ function ReportsView() {
 
 function AuditView() {
   return (
+    <div className="overflow-x-auto rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+      <h3 className="mb-6 text-xl font-semibold tracking-tight text-slate-950">Trazabilidad de auditoria</h3>
+      <table className="w-full min-w-[780px] text-sm">
+        <thead>
+          <tr className="border-b border-slate-200 text-left text-slate-500">
+            <th className="py-4 pr-4 font-medium">Fecha</th>
+            <th className="py-4 pr-4 font-medium">Usuario</th>
+            <th className="py-4 pr-4 font-medium">Rol</th>
+            <th className="py-4 pr-4 font-medium">Accion</th>
+            <th className="py-4 pr-4 font-medium">Objeto</th>
+            <th className="py-4 pr-4 font-medium">Resultado</th>
+            <th className="py-4 font-medium">Origen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {auditLog.map((log) => (
+            <tr key={`${log.fecha}-${log.usuario}`} className="border-b border-slate-100 hover:bg-slate-50/80">
+              <td className="py-4 pr-4 text-slate-700">{log.fecha}</td>
+              <td className="py-4 pr-4 font-medium text-slate-900">{log.usuario}</td>
+              <td className="py-4 pr-4 text-slate-700">{log.rol}</td>
+              <td className="py-4 pr-4 text-slate-700">{log.accion}</td>
+              <td className="py-4 pr-4 text-slate-700">{log.objeto}</td>
+              <td className="py-4 pr-4 text-slate-700">{log.resultado}</td>
+              <td className="py-4 text-slate-700">{log.origen}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function UsersView() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {usersSeed.map((user) => (
+        <div key={user.correo} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#10263f] text-sm font-semibold text-white">
+            {avatar(user.nombre)}
+          </div>
+          <div className="font-medium text-slate-900">{user.nombre}</div>
+          <div className="mt-1 text-sm text-slate-500">{user.correo}</div>
+          <div className="mt-4 space-y-2 text-sm text-slate-600">
+            <div>Rol: {user.rol}</div>
+            <div>Area: {user.area}</div>
+            <div>Estado: {user.estado}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ConfigurationView() {
+  return (
     <div className="space-y-6">
-      <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">Todas las acciones relevantes quedan registradas con usuario, rol, fecha, resultado e IP de origen.</div>
-      <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <KpiCard title="Eventos activos" value="3" subtitle="Vigilancia en curso" icon={Settings} accent="cyan" />
+        <KpiCard title="Eventos en configuracion" value="1" subtitle="Pendientes de cierre" icon={SlidersHorizontal} accent="amber" />
+        <KpiCard title="Variables estandarizadas" value="126" subtitle="Catalogo transversal" icon={ClipboardList} accent="slate" />
+      </div>
+
+      <div className="overflow-x-auto rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left text-slate-500">
-              <th className="py-4 pr-4 font-medium">Timestamp</th>
-              <th className="py-4 pr-4 font-medium">Usuario</th>
-              <th className="py-4 pr-4 font-medium">Rol</th>
-              <th className="py-4 pr-4 font-medium">Acción</th>
-              <th className="py-4 pr-4 font-medium">Objeto</th>
-              <th className="py-4 pr-4 font-medium">Resultado</th>
-              <th className="py-4 font-medium">IP</th>
+              <th className="py-4 pr-4 font-medium">Evento</th>
+              <th className="py-4 pr-4 font-medium">Estado</th>
+              <th className="py-4 pr-4 font-medium">Umbral</th>
+              <th className="py-4 pr-4 font-medium">Periodicidad</th>
+              <th className="py-4 font-medium">Variables</th>
             </tr>
           </thead>
           <tbody>
-            {auditLog.map((a) => (
-              <tr key={`${a.ts}-${a.user}`} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="py-4 pr-4 text-slate-700">{a.ts}</td>
-                <td className="py-4 pr-4 font-medium text-slate-900">{a.user}</td>
-                <td className="py-4 pr-4 text-slate-700">{a.role}</td>
-                <td className="py-4 pr-4 text-slate-700">{a.action}</td>
-                <td className="py-4 pr-4 text-slate-700">{a.obj}</td>
-                <td className="py-4 pr-4"><span className="rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-medium">{a.result}</span></td>
-                <td className="py-4 text-slate-700">{a.ip}</td>
+            {eventConfigSeed.map((item) => (
+              <tr key={item.evento} className="border-b border-slate-100 hover:bg-slate-50/80">
+                <td className="py-4 pr-4 font-medium text-slate-900">{item.evento}</td>
+                <td className="py-4 pr-4 text-slate-700">{item.estado}</td>
+                <td className="py-4 pr-4 text-slate-700">{item.umbral}</td>
+                <td className="py-4 pr-4 text-slate-700">{item.periodicidad}</td>
+                <td className="py-4 text-slate-700">{item.variables}</td>
               </tr>
             ))}
           </tbody>
@@ -1103,365 +1952,205 @@ function AuditView() {
   );
 }
 
-function ThresholdsView({ thresholds, setThresholds }) {
+function AIView() {
   return (
     <div className="space-y-6">
-      <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">Los umbrales definidos aquí activan alertas automáticas para médicos y gestores. Todos los cambios quedan auditados.</div>
-      <div className="space-y-4">
-        {thresholds.map((u) => (
-          <div key={u.id} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-center gap-6 justify-between">
-              <div className="min-w-[220px]">
-                <div className="text-lg font-semibold tracking-tight text-slate-950">{u.nm}</div>
-                <div className="text-sm text-slate-500">{u.cat} · Unidad {u.unit}</div>
-              </div>
-              <div className="flex-1 min-w-[260px]">
-                <div className="flex justify-between text-sm mb-2 text-slate-500"><span>{u.min}</span><span className="font-medium text-slate-950">{u.val} {u.unit}</span><span>{u.max}</span></div>
-                <input type="range" min={u.min} max={u.max} value={u.val} onChange={(e) => setThresholds((prev) => prev.map((x) => x.id === u.id ? { ...x, val: Number(e.target.value) } : x))} className="w-full accent-cyan-700" />
-              </div>
-              <button className="rounded-2xl bg-cyan-700 text-white px-5 py-3 text-sm font-semibold hover:bg-cyan-800">Guardar</button>
-            </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <KpiCard title="Patrones detectados" value="7" subtitle="Analisis activo" icon={Brain} accent="cyan" />
+        <KpiCard title="Predicciones" value="5" subtitle="Corte semanal" icon={Activity} accent="amber" />
+        <KpiCard title="Alertas IA" value="3" subtitle="Revision prioritaria" icon={TriangleAlert} accent="rose" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <Brain className="h-4 w-4 text-teal-700" />
+            Analisis epidemiologico
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function UsersView() {
-  return (
-    <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm overflow-x-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-xl font-semibold tracking-tight">Gestión de usuarios</h3>
-          <p className="text-sm text-slate-500">Roles, acceso y actividad reciente</p>
-        </div>
-        <button className="rounded-2xl bg-cyan-700 text-white px-5 py-3 text-sm font-semibold hover:bg-cyan-800">Nuevo usuario</button>
-      </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 text-left text-slate-500">
-            <th className="py-4 pr-4 font-medium">Usuario</th>
-            <th className="py-4 pr-4 font-medium">Email</th>
-            <th className="py-4 pr-4 font-medium">Rol</th>
-            <th className="py-4 pr-4 font-medium">Estado</th>
-            <th className="py-4 pr-4 font-medium">Último acceso</th>
-            <th className="py-4 font-medium">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {usersSeed.map((u) => (
-            <tr key={u.email} className="border-b border-slate-100 hover:bg-slate-50">
-              <td className="py-4 pr-4 font-medium text-slate-900">{u.nm}</td>
-              <td className="py-4 pr-4 text-slate-700">{u.email}</td>
-              <td className="py-4 pr-4 text-slate-700">{u.role}</td>
-              <td className="py-4 pr-4"><span className={cn("rounded-full border px-3 py-1 text-xs font-medium", u.st === "activo" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-700 border-slate-200")}>{u.st}</span></td>
-              <td className="py-4 pr-4 text-slate-700">{u.last}</td>
-              <td className="py-4"><div className="flex gap-2"><button className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium">Editar</button><button className="rounded-2xl border border-slate-200 px-3 py-2 text-xs font-medium">Permisos</button></div></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ModulesView() {
-  return (
-    <div className="space-y-6">
-      <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900">La arquitectura se mantiene modular para permitir la inclusión de nuevas enfermedades, formularios, validaciones y reportes sin reestructurar el sistema.</div>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {modulesSeed.map((m) => (
-          <div key={m.id} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-lg font-semibold tracking-tight text-slate-950">{m.nm}</div>
-                <div className="text-sm text-slate-500 mt-1">Estado: {m.st}</div>
-              </div>
-              <span className={cn("rounded-full border px-3 py-1 text-xs font-medium", m.st === "activo" ? "bg-emerald-100 text-emerald-700 border-emerald-200" : m.st === "configurando" ? "bg-amber-100 text-amber-700 border-amber-200" : "bg-slate-100 text-slate-700 border-slate-200")}>{m.st}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4 mt-5">
-              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4"><div className="text-sm text-slate-500">Variables</div><div className="text-2xl font-semibold mt-2">{m.vars}</div></div>
-              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4"><div className="text-sm text-slate-500">Fichas</div><div className="text-2xl font-semibold mt-2">{m.fichas}</div></div>
-            </div>
-            <button className="w-full mt-5 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50">Configurar módulo</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function IAPatternsView() {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KpiCard title="Patrones detectados" value="7" sub="Análisis activo" icon={Brain} accent="violet" />
-        <KpiCard title="Correlaciones" value="5" sub="Relevancia alta" icon={Activity} accent="emerald" />
-        <KpiCard title="Alertas IA" value="3" sub="Epidemiológicas" icon={TriangleAlert} accent="rose" />
-      </div>
-      <div className="grid grid-cols-1 xl:grid-cols-[0.9fr_1.1fr] gap-6">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold tracking-tight">Mapa de correlaciones</h3>
-          <div className="space-y-4 mt-6">
-            {[
-              ["DM → IRC", 92],
-              ["Tabaco → EPOC", 74],
-              ["HTA → Cardiovascular", 71],
-              ["Obesidad → DM", 68],
-              ["Sedentarismo → HTA", 59],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <div className="flex justify-between text-sm mb-2"><span className="text-slate-600">{label}</span><span className="font-medium">{value}%</span></div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden"><div className="h-full rounded-full bg-violet-500" style={{ width: `${value}%` }} /></div>
-              </div>
+          <div className="mt-5 space-y-3">
+            {epidemiologicalPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+              >
+                {prompt}
+              </button>
             ))}
           </div>
         </div>
+
         <div className="space-y-4">
-          {iaPatterns.map((pat) => (
-            <div key={pat.t} className="rounded-[28px] border border-violet-100 bg-white p-5 shadow-sm">
+          {aiPatterns.map((pattern) => (
+            <div key={pattern.titulo} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-violet-100 text-violet-700 px-3 py-1 text-xs font-medium">{pat.tipo}</span>
-                  <div className="font-semibold text-slate-950">{pat.t}</div>
+                  <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-medium text-cyan-700">{pattern.tipo}</span>
+                  <div className="font-semibold text-slate-950">{pattern.titulo}</div>
                 </div>
-                <div className="text-lg font-semibold text-violet-700">{pat.sc}</div>
+                <div className="text-lg font-semibold text-teal-700">{pattern.score}</div>
               </div>
-              <p className="mt-4 text-sm text-slate-600 leading-6">{pat.d}</p>
+              <p className="mt-4 text-sm leading-6 text-slate-600">{pattern.descripcion}</p>
             </div>
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function IAPredictionView() {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KpiCard title="Consultas proyectadas" value="234" sub="Próximos 30 días" icon={Stethoscope} accent="sky" />
-        <KpiCard title="Incremento esperado" value="12.4%" sub="Variación prevista" icon={Activity} accent="amber" />
-        <KpiCard title="Hospitalización proyectada" value="18" sub="Pacientes estimados" icon={HeartPulse} accent="rose" />
-      </div>
-      <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold tracking-tight">Proyección de demanda</h3>
-          <p className="text-sm text-slate-500 mt-1">Horizonte de 8 semanas</p>
-          <div className="mt-6"><MiniBarChart values={[180, 195, 210, 205, 220, 228, 238, 252, 260, 268, 280, 294]} tone="rose" /></div>
-        </div>
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-xl font-semibold tracking-tight">Recomendaciones</h3>
-          <div className="space-y-3 mt-5">
-            {[
-              "Aumentar 1 cupo/semana en Endocrinología.",
-              "Reforzar disponibilidad de camas para hospitalización crónica.",
-              "Incrementar stock de insulina NPH e insumos asociados.",
-              "Monitorear cohortes con multimorbilidad renal y cardiovascular.",
-            ].map((line) => (
-              <div key={line} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 leading-6">{line}</div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function HistoryStudentView({ patients }) {
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-[0.8fr_1.2fr] gap-6">
-      <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-xl font-semibold tracking-tight">Pacientes disponibles</h3>
-        <div className="space-y-3 mt-5">
-          {patients.slice(0, 6).map((p) => (
-            <button key={p.id} className="w-full rounded-[24px] border border-slate-200 bg-slate-50 p-4 text-left hover:bg-slate-100">
-              <div className="font-medium text-slate-900">{p.nm}</div>
-              <div className="text-sm text-slate-500 mt-1">{p.dx}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-xl font-semibold tracking-tight">Línea de tiempo supervisada</h3>
-        <div className="space-y-4 mt-6">
-          {historyItems.map((item, idx) => (
-            <div key={idx} className="flex gap-4">
-              <div className="flex flex-col items-center">
-                <div className="w-4 h-4 rounded-full bg-slate-950 mt-1" />
-                {idx !== historyItems.length - 1 && <div className="w-px flex-1 bg-slate-200 mt-2" />}
-              </div>
-              <div className={cn("flex-1 rounded-[24px] border p-4", toneClasses(item.tone))}>
-                <div className="flex justify-between gap-3 mb-2"><div className="font-medium">{item.t}</div><div className="text-xs opacity-80">{item.dt}</div></div>
-                <div className="text-sm leading-6 opacity-90">{item.d}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ResourcesView() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      {[
-        ["Guía SIVIGILA: Enfermedades crónicas", "Protocolo oficial adaptado a ECNT."],
-        ["Manejo integral de HTA", "Algoritmos y lineamientos clínicos."],
-        ["Clasificación GOLD — EPOC", "Criterios de estadificación y manejo."],
-        ["IRC: estadios y TFG", "Referencia KDIGO y vigilancia."],
-        ["Toma de muestras", "Procedimientos estandarizados."],
-        ["Epidemiología aplicada a ECNT", "Indicadores, tasas y análisis poblacional."],
-      ].map(([title, desc]) => (
-        <div key={title} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-          <div className="w-12 h-12 rounded-2xl bg-slate-950 text-white flex items-center justify-center mb-4"><BookOpen className="w-5 h-5" /></div>
-          <div className="font-semibold text-slate-950">{title}</div>
-          <div className="text-sm text-slate-500 mt-3 leading-6">{desc}</div>
-        </div>
-      ))}
     </div>
   );
 }
 
 function PublicView({ tab, setTab }) {
-  const max = Math.max(...departments.map((d) => d.c));
-  const top = [...departments].sort((a, b) => b.c - a.c).slice(0, 10);
-  const compareSeries = [
-    ["Diabetes T2", [420, 460, 440, 510, 530, 560, 550, 580, 600, 590, 610, 620]],
-    ["Hipertensión", [340, 380, 360, 410, 430, 460, 450, 470, 490, 480, 500, 512]],
-    ["Falla cardiaca", [180, 210, 205, 220, 235, 248, 255, 266, 274, 281, 290, 302]],
-    ["EPOC", [150, 162, 158, 176, 184, 190, 202, 210, 216, 222, 228, 235]],
-  ];
+  const max = Math.max(...departments.map((department) => department.c));
+  const top = [...departments].sort((a, b) => b.c - a.c).slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-slate-950 text-white px-6 py-4 border-b border-white/10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="border-b border-slate-200 bg-[#10263f] px-6 py-4 text-white">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-300 text-slate-950 flex items-center justify-center font-bold text-lg">P</div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-300 text-lg font-bold text-slate-950">P</div>
             <div>
-              <div className="font-semibold tracking-tight text-lg">Observatorio PMEC</div>
-              <div className="text-xs text-slate-400">Monitoreo público de enfermedades crónicas · datos agregados</div>
+              <div className="text-lg font-semibold tracking-tight">Observatorio PMEC</div>
+              <div className="text-xs text-slate-300">Datos agregados de vigilancia epidemiologica de enfermedades cronicas</div>
             </div>
           </div>
-          <div className="hidden lg:flex items-center gap-3 text-xs text-slate-400">
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Actualización: Nov 2024</span>
+          <div className="hidden items-center gap-3 text-xs text-slate-300 lg:flex">
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Actualizacion: Nov 2024</span>
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Fuente institucional</span>
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Datos anonimizados</span>
           </div>
         </div>
       </div>
 
-      <section className="bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 px-6 py-14 text-white border-b border-slate-800">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
+      <section className="border-b border-slate-200 bg-white px-6 py-14">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 xl:grid-cols-[1.05fr_0.95fr]">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs text-cyan-100 mb-5">Observatorio de salud pública</div>
-            <h1 className="text-4xl font-semibold tracking-tight max-w-3xl">Vigilancia pública de enfermedades crónicas con enfoque territorial, preventivo y epidemiológico.</h1>
-            <p className="text-slate-300 max-w-3xl mt-5 leading-8">Consulta indicadores agregados, tendencias, mapas, geovisor conceptual, comparativos, información sobre enfermedades crónicas y contenidos de prevención, sin comprometer datos personales de pacientes.</p>
+            <div className="mb-5 inline-flex rounded-full border border-cyan-100 bg-cyan-50 px-4 py-1.5 text-xs font-medium text-cyan-800">
+              Observatorio de salud publica
+            </div>
+            <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950">
+              Vigilancia publica de enfermedades cronicas con enfoque territorial, preventivo y epidemiologico.
+            </h1>
+            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+              Consulta indicadores agregados, tendencias, mapas, geovisor conceptual y boletines institucionales sin exponer informacion personal.
+            </p>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-[28px] bg-white/10 border border-white/10 p-5 backdrop-blur-sm"><div className="text-xs uppercase tracking-[0.18em] text-slate-300">Casos agregados</div><div className="text-3xl font-semibold mt-3">18,942</div><div className="text-sm text-slate-300 mt-2">Eventos crónicos vigilados</div></div>
-            <div className="rounded-[28px] bg-white/10 border border-white/10 p-5 backdrop-blur-sm"><div className="text-xs uppercase tracking-[0.18em] text-slate-300">Cobertura</div><div className="text-3xl font-semibold mt-3">32</div><div className="text-sm text-slate-300 mt-2">Departamentos con registros</div></div>
-            <div className="rounded-[28px] bg-white/10 border border-white/10 p-5 backdrop-blur-sm"><div className="text-xs uppercase tracking-[0.18em] text-slate-300">Piloto</div><div className="text-2xl font-semibold mt-3">Falla cardiaca</div><div className="text-sm text-slate-300 mt-2">Evento inicial priorizado</div></div>
-            <div className="rounded-[28px] bg-white/10 border border-white/10 p-5 backdrop-blur-sm"><div className="text-xs uppercase tracking-[0.18em] text-slate-300">Calidad</div><div className="text-3xl font-semibold mt-3">94%</div><div className="text-sm text-slate-300 mt-2">Notificación válida</div></div>
+            {[
+              ["Notificaciones agregadas", "18,942"],
+              ["Cobertura territorial", "32 departamentos"],
+              ["Evento piloto", "Falla cardiaca"],
+              ["Calidad del dato", "94%"],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
+                <div className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{value}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <div className="border-b border-slate-200 bg-white sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 flex gap-2 overflow-x-auto py-3">
+      <div className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
+        <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-6 py-3">
           {publicTabs.map((item) => (
-            <button key={item.id} onClick={() => setTab(item.id)} className={cn("rounded-2xl px-4 py-2 text-sm font-medium whitespace-nowrap border", tab === item.id ? "bg-slate-950 text-white border-slate-950" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50")}>{item.label}</button>
+            <button
+              key={item.id}
+              onClick={() => setTab(item.id)}
+              className={cn(
+                "whitespace-nowrap rounded-2xl border px-4 py-2 text-sm font-medium",
+                tab === item.id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+              )}
+            >
+              {item.label}
+            </button>
           ))}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {tab === "indicadores" && (
+      <div className="mx-auto max-w-7xl space-y-8 px-6 py-8">
+        {tab === "indicadores" ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-              <KpiCard title="Total casos" value="18,942" sub="Agregados" icon={ClipboardList} accent="sky" />
-              <KpiCard title="Departamentos" value="32" sub="Con registros" icon={Map} accent="emerald" />
-              <KpiCard title="Tasa x 100k" value="367.2" sub="Poblacional" icon={Gauge} accent="amber" />
-              <KpiCard title="Calidad" value="94%" sub="Notificación válida" icon={CheckCircle2} accent="violet" />
-              <KpiCard title="Actualización" value="Nov 2024" sub="Corte de datos" icon={CalendarDays} accent="slate" />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <KpiCard title="Total notificaciones" value="18,942" subtitle="Agregado historico" icon={ClipboardList} accent="cyan" />
+              <KpiCard title="Departamentos" value="32" subtitle="Con registros" icon={Map} accent="emerald" />
+              <KpiCard title="Tasa por 100 mil" value="367.2" subtitle="Poblacional" icon={Gauge} accent="amber" />
+              <KpiCard title="Calidad del dato" value="94%" subtitle="Notificacion valida" icon={CheckCircle2} accent="slate" />
+              <KpiCard title="Corte" value="Nov 2024" subtitle="Actualizacion" icon={CalendarDays} accent="teal" />
             </div>
-            <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-semibold tracking-tight">Distribución por diagnóstico</h3>
-                <div className="mt-5"><DonutLegend items={[{ label: "Diabetes T2", value: "5,200", color: "#0f172a" }, { label: "Hipertensión", value: "4,100", color: "#0891b2" }, { label: "Falla cardiaca", value: "2,480", color: "#8b5cf6" }, { label: "EPOC", value: "1,800", color: "#f59e0b" }, { label: "Otras", value: "5,362", color: "#64748b" }]} /></div>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.04fr_0.96fr]">
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <h3 className="text-xl font-semibold tracking-tight text-slate-950">Resumen publico</h3>
+                <div className="mt-5 grid grid-cols-2 gap-4">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm text-slate-500">Mayor concentracion</div>
+                    <div className="mt-2 text-lg font-semibold text-slate-950">Bogota D.C.</div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm text-slate-500">Evento piloto</div>
+                    <div className="mt-2 text-lg font-semibold text-slate-950">Falla cardiaca</div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm text-slate-500">Variacion semanal</div>
+                    <div className="mt-2 text-lg font-semibold text-slate-950">+11.8%</div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm text-slate-500">Cobertura</div>
+                    <div className="mt-2 text-lg font-semibold text-slate-950">842 municipios</div>
+                  </div>
+                </div>
               </div>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-semibold tracking-tight">Panel resumen público</h3>
-                <div className="grid grid-cols-2 gap-4 mt-5">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm text-slate-500">Sexo femenino</div><div className="text-2xl font-semibold mt-2">57.5%</div></div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm text-slate-500">Sexo masculino</div><div className="text-2xl font-semibold mt-2">42.5%</div></div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm text-slate-500">Mayor carga</div><div className="text-lg font-semibold mt-2">50 a 69 años</div></div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="text-sm text-slate-500">Enfermedad piloto</div><div className="text-lg font-semibold mt-2">Falla cardiaca</div></div>
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <h3 className="text-xl font-semibold tracking-tight text-slate-950">Recursos para consulta publica</h3>
+                <div className="mt-5 space-y-3">
+                  {publicResources.map(([title, description]) => (
+                    <div key={title} className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+                      <div className="font-medium text-slate-900">{title}</div>
+                      <div className="mt-2 text-sm leading-6 text-slate-600">{description}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           </>
-        )}
+        ) : null}
 
-        {tab === "mapa" && (
-          <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-semibold tracking-tight">Mapa de calor nacional</h3>
-                  <p className="text-sm text-slate-500">Concentración de casos agregados por departamento</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {departments.map((d) => (
-                  <div key={d.n} className={cn("rounded-2xl p-4 min-h-[82px] flex flex-col justify-between", heatClass(d.c, max))}>
-                    <div className="text-sm font-medium leading-5">{d.n}</div>
-                    <div className="text-xs opacity-90 mt-2">{d.c.toLocaleString()} casos</div>
+        {tab === "mapa" ? (
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.02fr_0.98fr]">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+              <h3 className="text-xl font-semibold tracking-tight text-slate-950">Mapa de calor nacional</h3>
+              <p className="mt-1 text-sm text-slate-500">Concentracion agregada por departamento.</p>
+              <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+                {departments.map((department) => (
+                  <div key={department.n} className={cn("flex min-h-[82px] flex-col justify-between rounded-2xl p-4", heatClass(department.c, max))}>
+                    <div className="text-sm font-medium leading-5">{department.n}</div>
+                    <div className="mt-2 text-xs opacity-90">{department.c.toLocaleString()} casos</div>
                   </div>
                 ))}
               </div>
             </div>
+
             <div className="space-y-6">
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold tracking-tight">GeoVisor conceptual</h3>
-                    <p className="text-sm text-slate-500">Exploración territorial del evento</p>
-                  </div>
-                  <span className="rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-medium">Interactivo</span>
-                </div>
-                <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-5">
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="rounded-2xl bg-white border border-slate-200 px-4 py-3 text-sm text-slate-500">Filtro: Falla cardiaca</div>
-                    <div className="rounded-2xl bg-white border border-slate-200 px-4 py-3 text-sm text-slate-500">Nivel: Municipio</div>
-                    <div className="rounded-2xl bg-white border border-slate-200 px-4 py-3 text-sm text-slate-500">Periodo: 2024</div>
-                    <div className="rounded-2xl bg-white border border-slate-200 px-4 py-3 text-sm text-slate-500">Sexo: Todos</div>
-                  </div>
-                  <div className="rounded-[24px] bg-gradient-to-br from-emerald-100 via-cyan-50 to-slate-100 border border-slate-200 min-h-[260px] p-4 relative overflow-hidden">
-                    <div className="absolute top-6 left-8 rounded-full bg-rose-500 text-white px-3 py-1 text-xs font-medium shadow">Pasto</div>
-                    <div className="absolute top-20 left-20 rounded-full bg-orange-500 text-white px-3 py-1 text-xs font-medium shadow">Tumaco</div>
-                    <div className="absolute top-16 right-16 rounded-full bg-amber-400 text-slate-900 px-3 py-1 text-xs font-medium shadow">Ipiales</div>
-                    <div className="absolute bottom-16 left-24 rounded-full bg-emerald-500 text-white px-3 py-1 text-xs font-medium shadow">Túquerres</div>
-                    <div className="absolute bottom-12 right-24 rounded-full bg-emerald-300 text-slate-900 px-3 py-1 text-xs font-medium shadow">La Unión</div>
-                    <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-sm">Mapa / geovisor de referencia visual</div>
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <h3 className="text-xl font-semibold tracking-tight text-slate-950">GeoVisor conceptual</h3>
+                <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="relative min-h-[260px] overflow-hidden rounded-[20px] border border-slate-200 bg-[linear-gradient(180deg,#ecfeff_0%,#f8fafc_100%)]">
+                    <div className="absolute left-6 top-6 rounded-full bg-rose-500 px-3 py-1 text-xs font-medium text-white">Pasto</div>
+                    <div className="absolute left-20 top-20 rounded-full bg-orange-500 px-3 py-1 text-xs font-medium text-white">Tumaco</div>
+                    <div className="absolute right-12 top-14 rounded-full bg-amber-400 px-3 py-1 text-xs font-medium text-slate-900">Ipiales</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-500">Visualizacion territorial de referencia</div>
                   </div>
                 </div>
               </div>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-semibold tracking-tight">Detalle por municipio</h3>
-                <div className="space-y-3 mt-5">
-                  {[["Pasto", "Muy alto", "Zona urbana", 1240], ["Tumaco", "Alto", "Costa pacífica", 860], ["Ipiales", "Medio", "Zona fronteriza", 540], ["Túquerres", "Medio", "Altiplano", 380], ["La Unión", "Bajo", "Centro occidente", 210], ["Samaniego", "Bajo", "Cordillera", 160]].map(([name, level, zone, value]) => (
-                    <div key={name} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between gap-4">
-                      <div>
-                        <div className="font-medium text-slate-900">{name}</div>
-                        <div className="text-sm text-slate-500">{zone}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-slate-900">{value} casos</div>
-                        <div className={cn("mt-1 rounded-full px-3 py-1 text-xs font-medium inline-block", level === "Muy alto" ? "bg-rose-100 text-rose-700" : level === "Alto" ? "bg-orange-100 text-orange-700" : level === "Medio" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700")}>{level}</div>
+
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <h3 className="text-xl font-semibold tracking-tight text-slate-950">Territorios destacados</h3>
+                <div className="mt-5 space-y-3">
+                  {top.map((department) => (
+                    <div key={department.n} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="font-medium text-slate-900">{department.n}</div>
+                        <div className="text-sm text-slate-600">{department.c.toLocaleString()} casos</div>
                       </div>
                     </div>
                   ))}
@@ -1469,185 +2158,211 @@ function PublicView({ tab, setTab }) {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {tab === "estadisticas" && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-xl font-semibold tracking-tight">Grupos etarios</h3><div className="mt-5"><MiniBarChart values={[45, 210, 580, 1240, 2100, 3200, 3800, 2900, 1867, 1460, 1200, 980]} tone="amber" /></div></div>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-xl font-semibold tracking-tight">Factores de riesgo</h3><div className="space-y-3 mt-5">{[["Obesidad", 42], ["HTA", 38], ["Tabaquismo", 28], ["Sedentarismo", 35], ["Dislipidemia", 31]].map(([l, v]) => <div key={l}><div className="flex justify-between text-sm mb-2"><span>{l}</span><span>{v}%</span></div><div className="h-2 rounded-full bg-slate-100 overflow-hidden"><div className="h-full rounded-full bg-cyan-700" style={{ width: `${v}%` }} /></div></div>)}</div></div>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-xl font-semibold tracking-tight">Top territorios</h3><div className="space-y-3 mt-5">{top.map((d) => <div key={d.n} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 flex justify-between"><span>{d.n}</span><span className="font-medium">{d.c}</span></div>)}</div></div>
-            </div>
-            <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-6">
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-semibold tracking-tight">Comparativo entre enfermedades</h3>
-                <div className="space-y-5 mt-6">
-                  {compareSeries.map(([label, values], idx) => {
-                    const maxLocal = Math.max(...values);
-                    const tones = ["bg-slate-900", "bg-cyan-700", "bg-violet-500", "bg-amber-500"];
-                    return (
-                      <div key={label}>
-                        <div className="flex items-center justify-between mb-2 text-sm"><span className="font-medium text-slate-800">{label}</span><span className="text-slate-500">Último corte: {values[values.length - 1]}</span></div>
-                        <div className="flex items-end gap-1.5 h-24">
-                          {values.map((v, i) => (
-                            <div key={i} className="flex-1 rounded-t-md" style={{ height: `${(v / maxLocal) * 100}%` }}><div className={cn("w-full rounded-t-md", tones[idx])} style={{ height: "100%" }} /></div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+        {tab === "tendencias" ? (
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+              <h3 className="text-xl font-semibold tracking-tight text-slate-950">Tendencia mensual</h3>
+              <div className="mt-6">
+                <MiniTrendChart values={[1120, 1240, 1180, 1350, 1420, 1510, 1480, 1560, 1620, 1580, 1640, 1710]} labels={monthLabels} tone="slate" tall />
               </div>
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-semibold tracking-tight">Tablero temático</h3>
-                <div className="space-y-3 mt-5">
-                  {["Distribución por régimen de afiliación", "Análisis por grupos etarios", "Comparativo entre sexo y territorio", "Frecuencia de factores de riesgo", "Serie histórica por enfermedad", "Tasa ajustada por región", "Tendencia del piloto de falla cardiaca", "Comportamiento territorial por municipio"].map((item) => <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{item}</div>)}
-                </div>
+            </div>
+            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+              <h3 className="text-xl font-semibold tracking-tight text-slate-950">Comparacion interanual</h3>
+              <div className="mt-5 space-y-4">
+                {[
+                  ["2022", 1120],
+                  ["2023", 1380],
+                  ["2024", 1710],
+                ].map(([year, value]) => (
+                  <div key={year}>
+                    <div className="mb-2 flex justify-between text-sm">
+                      <span className="text-slate-600">{year}</span>
+                      <span className="font-medium text-slate-950">{value}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-[#10263f]" style={{ width: `${(value / 1710) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {tab === "tendencias" && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-xl font-semibold tracking-tight">Tendencia mensual</h3><div className="mt-5"><MiniBarChart values={[1120, 1240, 1180, 1350, 1420, 1510, 1480, 1560, 1620, 1580, 1640, 1710]} tone="navy" /></div></div>
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm"><h3 className="text-xl font-semibold tracking-tight">Comparación interanual</h3><div className="space-y-4 mt-5">{[["2022", 1120], ["2023", 1380], ["2024", 1710]].map(([y, v]) => <div key={y}><div className="flex justify-between text-sm mb-2"><span>{y}</span><span>{v}</span></div><div className="h-2 rounded-full bg-slate-100 overflow-hidden"><div className="h-full rounded-full bg-slate-900" style={{ width: `${(v / 1710) * 100}%` }} /></div></div>)}</div></div>
-          </div>
-        )}
-
-        {tab === "prevencion" && (
-          <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-6">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-100 px-4 py-1.5 text-xs font-medium text-emerald-700 mb-4">Prevención y cuidado</div>
-              <h3 className="text-2xl font-semibold tracking-tight">Falla cardiaca — módulo piloto</h3>
-              <p className="text-slate-500 mt-3 leading-7">La falla cardiaca es la enfermedad piloto del proyecto. En la vista pública se incluye una explicación clara, medidas de prevención, síntomas de alarma y orientación para consulta temprana.</p>
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5"><div className="text-sm font-semibold text-slate-900 mb-3">¿Qué es?</div><div className="text-sm text-slate-600 leading-6">La falla cardiaca ocurre cuando el corazón no puede bombear sangre de forma suficiente. Puede relacionarse con hipertensión, infarto, cardiopatías valvulares, diabetes y otras condiciones cardiovasculares.</div></div>
-                <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5"><div className="text-sm font-semibold text-slate-900 mb-3">Síntomas de alarma</div><div className="flex flex-wrap gap-2">{heartFailureSymptoms.map((s) => <span key={s} className="rounded-full bg-rose-100 text-rose-700 px-3 py-1 text-xs font-medium">{s}</span>)}</div></div>
+        {tab === "prevencion" ? (
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.94fr_1.06fr]">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+              <div className="inline-flex rounded-full border border-emerald-100 bg-emerald-50 px-4 py-1.5 text-xs font-medium text-emerald-700">
+                Prevencion y orientacion publica
               </div>
-              <div className="mt-6 rounded-[28px] border border-emerald-200 bg-emerald-50 p-5">
-                <div className="text-sm font-semibold text-emerald-800 mb-3">Medidas de prevención</div>
-                <div className="space-y-3">{heartFailurePrevention.map((item) => <div key={item} className="rounded-2xl bg-white/80 border border-emerald-100 px-4 py-3 text-sm text-slate-700">{item}</div>)}</div>
+              <h3 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Falla cardiaca como evento piloto</h3>
+              <p className="mt-3 leading-7 text-slate-600">
+                La vista publica orienta a la ciudadania sobre factores de riesgo, alerta temprana y consulta oportuna sin mostrar informacion individual.
+              </p>
+            </div>
+            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+              <h3 className="text-xl font-semibold tracking-tight text-slate-950">Recomendaciones clave</h3>
+              <div className="mt-5 space-y-3">
+                {preventionTips.map((tip) => (
+                  <div key={tip} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700">
+                    {tip}
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="space-y-6">
-              <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-semibold tracking-tight">Secciones útiles para ciudadanía</h3>
-                <div className="space-y-3 mt-5">{publicResources.map(([title, desc]) => <div key={title} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4"><div className="font-medium text-slate-900">{title}</div><div className="text-sm text-slate-500 mt-2 leading-6">{desc}</div></div>)}</div>
-              </div>
-              <div className="rounded-[32px] border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-6 shadow-sm">
-                <div className="inline-flex items-center gap-2 rounded-full bg-cyan-100 px-3 py-1 text-xs font-medium text-cyan-800 mb-4">Información pública útil</div>
-                <h3 className="text-xl font-semibold tracking-tight">Qué agrega valor en esta vista</h3>
-                <div className="space-y-3 mt-5">
-                  {["Definición breve y clara de cada enfermedad crónica vigilada.", "Síntomas de alarma y señales para consultar oportunamente.", "Medidas de prevención y autocuidado.", "Enlaces a reportes, boletines y protocolos públicos.", "Preguntas frecuentes para pacientes y cuidadores."].map((line) => <div key={line} className="rounded-2xl border border-cyan-100 bg-white/80 px-4 py-3 text-sm text-slate-700 leading-6">{line}</div>)}
+          </div>
+        ) : null}
+
+        {tab === "eventos" ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {publicEventCards.map(([title, description]) => (
+              <div key={title} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#10263f] text-white">
+                  <HeartPulse className="h-5 w-5" />
                 </div>
+                <div className="text-lg font-semibold tracking-tight text-slate-950">{title}</div>
+                <div className="mt-3 text-sm leading-6 text-slate-600">{description}</div>
               </div>
-            </div>
+            ))}
           </div>
-        )}
-
-        {tab === "enfermedades" && (
-          <div className="space-y-6">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-2xl font-semibold tracking-tight">Información general sobre enfermedades crónicas</h3>
-              <p className="text-slate-500 mt-3 leading-7">Además de mapas y estadísticas, la vista pública orienta a la ciudadanía con descripciones breves sobre las enfermedades vigiladas, sus riesgos y señales de alarma.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {chronicCards.map(([title, desc]) => (
-                <div key={title} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-950 text-white flex items-center justify-center mb-4"><HeartPulse className="w-5 h-5" /></div>
-                  <div className="text-lg font-semibold tracking-tight text-slate-950">{title}</div>
-                  <div className="text-sm text-slate-500 mt-3 leading-6">{desc}</div>
-                  <button className="mt-5 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50">Ver más</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
 }
 
-function CreatePatientModal({ open, onClose, onSave }) {
+function CreateNotificationModal({ open, onClose, onSave }) {
   const [form, setForm] = useState({
-    tipoDoc: "CC",
-    numDoc: "",
-    nombres: "",
-    apellidos: "",
-    fechaNac: "",
-    sexo: "F",
-    depto: "Nariño",
-    mpio: "Pasto",
-    tel: "",
-    eps: "Sura",
-    dx: "Falla cardiaca",
-    peri: "semanal",
-    antecedentes: "",
-    peso: "",
-    talla: "",
-    imc: "",
-    riesgo: "medio",
-    meds: "",
+    evento: "Falla cardiaca",
+    semana: "SE 42",
+    departamento: "Narino",
+    municipio: "Pasto",
+    unidad: "Hospital Universitario Departamental",
+    casos: "12",
+    variacion: "+6%",
+    comportamiento: "En observacion",
+    alerta: "Media",
+    clasificacion: "Caso probable",
+    fechaNotificacion: "2024-11-15",
+    sexo: "Femenino",
+    grupoEtario: "50 a 64",
+    aseguramiento: "Contributivo",
+    calidad: "94%",
+    observaciones: "",
   });
 
   if (!open) return null;
 
   const update = (key, value) => {
-    const next = { ...form, [key]: value };
-    if (key === "peso" || key === "talla") {
-      const p = Number(key === "peso" ? value : next.peso);
-      const t = Number(key === "talla" ? value : next.talla);
-      if (p && t) next.imc = (p / ((t / 100) ** 2)).toFixed(1);
-    }
-    setForm(next);
+    setForm((current) => ({ ...current, [key]: value }));
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl rounded-[32px] bg-white border border-slate-200 shadow-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
+      <div className="max-h-[86vh] w-full max-w-5xl overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
           <div>
-            <h3 className="text-xl font-semibold tracking-tight">Registrar nuevo paciente</h3>
-            <p className="text-sm text-slate-500">Incluye datos básicos e información clínica adicional</p>
+            <h3 className="text-xl font-semibold tracking-tight text-slate-950">Nueva notificacion</h3>
+            <p className="text-sm text-slate-500">Registro base para evento notificado y variables minimas de vigilancia.</p>
           </div>
-          <button onClick={onClose} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50">Cerrar</button>
+          <button onClick={onClose} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            Cerrar
+          </button>
         </div>
-        <div className="p-6 grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-6 max-h-[80vh] overflow-y-auto">
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[["Tipo identificación", "tipoDoc"], ["Número identificación", "numDoc"], ["Nombres", "nombres"], ["Apellidos", "apellidos"], ["Fecha nacimiento", "fechaNac"], ["Sexo", "sexo"], ["Departamento", "depto"], ["Municipio", "mpio"], ["Teléfono", "tel"], ["EPS", "eps"], ["Diagnóstico", "dx"], ["Periodicidad", "peri"]].map(([label, key]) => (
-                <div key={key}>
-                  <div className="text-sm font-medium text-slate-700 mb-2">{label}</div>
-                  <input value={form[key]} onChange={(e) => update(key, e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-cyan-400" />
-                </div>
-              ))}
-              <div className="md:col-span-2">
-                <div className="text-sm font-medium text-slate-700 mb-2">Antecedentes clínicos</div>
-                <textarea value={form.antecedentes} onChange={(e) => update("antecedentes", e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm min-h-[96px] outline-none focus:border-cyan-400" />
-              </div>
-            </div>
-          </div>
-          <div className="space-y-4">
-            {[["Peso (kg)", "peso"], ["Talla (cm)", "talla"], ["IMC", "imc"], ["Nivel de riesgo", "riesgo"]].map(([label, key]) => (
-              <div key={key}>
-                <div className="text-sm font-medium text-slate-700 mb-2">{label}</div>
-                <input value={form[key]} onChange={(e) => update(key, e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-cyan-400" />
+
+        <div className="grid max-h-[72vh] grid-cols-1 gap-6 overflow-y-auto p-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {[
+              ["Evento", "evento"],
+              ["Semana epidemiologica", "semana"],
+              ["Departamento", "departamento"],
+              ["Municipio", "municipio"],
+              ["Unidad notificadora", "unidad"],
+              ["Casos notificados", "casos"],
+              ["Variacion", "variacion"],
+              ["Comportamiento", "comportamiento"],
+              ["Nivel de alerta", "alerta"],
+              ["Clasificacion del caso", "clasificacion"],
+              ["Fecha de notificacion", "fechaNotificacion"],
+              ["Calidad del dato", "calidad"],
+            ].map(([label, key]) => (
+              <div key={key} className={key === "unidad" ? "md:col-span-2" : ""}>
+                <div className="mb-2 text-sm font-medium text-slate-700">{label}</div>
+                <input
+                  value={form[key]}
+                  onChange={(event) => update(key, event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-cyan-400"
+                />
               </div>
             ))}
+
             <div>
-              <div className="text-sm font-medium text-slate-700 mb-2">Medicación actual</div>
-              <textarea value={form.meds} onChange={(e) => update("meds", e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm min-h-[120px] outline-none focus:border-cyan-400" />
+              <div className="mb-2 text-sm font-medium text-slate-700">Sexo</div>
+              <input
+                value={form.sexo}
+                onChange={(event) => update("sexo", event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-cyan-400"
+              />
             </div>
-            <div className="rounded-[28px] border border-cyan-200 bg-cyan-50 p-5">
-              <div className="flex items-center gap-2 text-cyan-800 text-sm font-semibold"><Sparkles className="w-4 h-4" /> Asistencia IA</div>
-              <div className="text-sm text-slate-700 leading-6 mt-3">La interfaz valida campos, calcula IMC automáticamente y prepara al médico para continuar el flujo con ficha, documentos e historial.</div>
+            <div>
+              <div className="mb-2 text-sm font-medium text-slate-700">Grupo etario</div>
+              <input
+                value={form.grupoEtario}
+                onChange={(event) => update("grupoEtario", event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-cyan-400"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <div className="mb-2 text-sm font-medium text-slate-700">Observaciones</div>
+              <textarea
+                value={form.observaciones}
+                onChange={(event) => update("observaciones", event.target.value)}
+                className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-cyan-400"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+              <div className="text-sm font-semibold text-slate-900">Resumen preliminar</div>
+              <div className="mt-4 space-y-3 text-sm text-slate-600">
+                <div>Evento: {form.evento}</div>
+                <div>Territorio: {form.municipio}, {form.departamento}</div>
+                <div>Semana epidemiologica: {form.semana}</div>
+                <div>Unidad notificadora: {form.unidad}</div>
+                <div>Comportamiento: {form.comportamiento}</div>
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200 bg-white p-5">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <Brain className="h-4 w-4 text-teal-700" />
+                Apoyo institucional
+              </div>
+              <div className="space-y-3">
+                {[
+                  "Validar consistencia territorial",
+                  "Comparar contra promedio historico",
+                  "Revisar calidad del dato",
+                ].map((line) => (
+                  <div key={line} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    {line}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-        <div className="px-6 py-5 border-t border-slate-200 flex justify-end gap-3">
-          <button onClick={onClose} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium hover:bg-slate-50">Cancelar</button>
-          <button onClick={() => onSave(form)} className="rounded-2xl bg-cyan-700 text-white px-5 py-3 text-sm font-semibold hover:bg-cyan-800">Guardar paciente</button>
+
+        <div className="flex justify-end gap-3 border-t border-slate-200 px-6 py-5">
+          <button onClick={onClose} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button onClick={() => onSave(form)} className="rounded-2xl bg-[#10263f] px-5 py-3 text-sm font-semibold text-white hover:bg-[#173452]">
+            Guardar notificacion
+          </button>
         </div>
       </div>
     </div>
@@ -1657,175 +2372,228 @@ function CreatePatientModal({ open, onClose, onSave }) {
 export default function PMECRedesignFull() {
   const [historyStack, setHistoryStack] = useState(["dashboard"]);
   const [mode, setMode] = useState("app");
-  const [role, setRole] = useState("medico");
+  const [role, setRole] = useState("epidemiologo");
   const [view, setViewState] = useState("dashboard");
   const [publicTab, setPublicTab] = useState("indicadores");
-  const [patients, setPatients] = useState(patientsSeed);
-  const [selectedPatient, setSelectedPatient] = useState("P-0008");
-  const [patientFilter, setPatientFilter] = useState("todos");
-  const [patientSearch, setPatientSearch] = useState("");
-  const [thresholds, setThresholds] = useState(thresholdsSeed);
+  const [notifications, setNotifications] = useState(eventNotificationsSeed);
+  const [selectedNotificationId, setSelectedNotificationId] = useState("EV-0001");
   const [createOpen, setCreateOpen] = useState(false);
 
-  const setView = (next) => {
-    setViewState(next);
-    setHistoryStack((prev) => [...prev, next]);
+  const profile = roleProfiles[role];
+  const selectedNotification = notifications.find((item) => item.id === selectedNotificationId) || notifications[0];
+
+  const navigate = (nextView) => {
+    startTransition(() => {
+      setViewState(nextView);
+      setHistoryStack((current) => (current[current.length - 1] === nextView ? current : [...current, nextView]));
+    });
+  };
+
+  const openNotificationDetail = (id) => {
+    setSelectedNotificationId(id);
+    navigate("detalle-notificacion");
+  };
+
+  const openAnalytics = (id) => {
+    setSelectedNotificationId(id);
+    navigate("analitica");
   };
 
   const goBack = () => {
-    setHistoryStack((prev) => {
-      if (prev.length <= 1) return prev;
-      const nextStack = prev.slice(0, -1);
+    setHistoryStack((current) => {
+      if (current.length <= 1) return current;
+      const nextStack = current.slice(0, -1);
       setViewState(nextStack[nextStack.length - 1]);
       return nextStack;
     });
   };
 
-  const patient = patients.find((p) => p.id === selectedPatient) || patients[0];
-
   const titleMap = {
-    dashboard: "Dashboard clínico",
-    pacientes: "Pacientes",
-    "patient-detail": "Detalle del paciente",
-    ficha: "Ficha clínica",
-    documentos: "Documentos médicos",
-    alertas: "Alertas clínicas",
-    analitica: "Analítica epidemiológica",
+    dashboard: "Dashboard de vigilancia epidemiologica",
+    notificaciones: "Notificaciones",
+    "detalle-notificacion": "Detalle de notificacion",
+    ficha: "Ficha de notificacion",
+    validacion: "Validacion de datos",
+    soportes: "Soportes de notificacion",
+    alertas: "Alertas epidemiologicas",
+    analitica: "Analitica territorial",
+    geovisor: "Geovisor",
     reportes: "Reportes",
-    usuarios: "Gestión de usuarios",
-    auditoria: "Registro de auditoría",
-    umbrales: "Umbrales de riesgo",
-    modulos: "Módulos y escalabilidad",
-    "ia-patrones": "Patrones clínicos con IA",
-    "ia-prediccion": "Predicción de demanda",
-    "ia-clinica": "Copiloto Clínico IA",
-    historial: "Historial supervisado",
-    recursos: "Recursos educativos",
+    auditoria: "Auditoria",
+    usuarios: "Usuarios y roles",
+    configuracion: "Configuracion de eventos",
+    "analisis-ia": "Analisis epidemiologico IA",
   };
 
   const subtitleMap = {
-    dashboard: "Sistema completo rediseñado con enfoque clínico, analítico y administrativo.",
-    pacientes: "Registro, búsqueda, seguimiento e integración con IA clínica.",
-    "patient-detail": "Resumen clínico, línea de tiempo, documentos y apoyo inteligente.",
-    ficha: "Diligenciamiento moderno de ficha estandarizada tipo SIVIGILA.",
-    documentos: "Carga, organización y consulta de documentos médicos.",
-    alertas: "Gestión de alertas clínicas y seguimiento de casos prioritarios.",
-    analitica: "Gráficas, heatmaps, filtros poblacionales y hallazgos epidemiológicos.",
-    reportes: "Exportación en PDF y Excel, además de reportes históricos.",
-    usuarios: "Administración de acceso por roles y actividad del sistema.",
-    auditoria: "Trazabilidad completa de acciones relevantes.",
-    umbrales: "Configuración de reglas clínicas para alertas automáticas.",
-    modulos: "Arquitectura modular para nuevas enfermedades crónicas.",
-    "ia-patrones": "Detección de tendencias, correlaciones y brechas clínicas.",
-    "ia-prediccion": "Proyección de demanda y planificación de recursos.",
-    "ia-clinica": "Asistencia al médico dentro del flujo del paciente y de la ficha.",
-    historial: "Modo lectura supervisado para el semillero.",
-    recursos: "Material de apoyo clínico y epidemiológico.",
+    dashboard: "Visualizacion general del comportamiento de eventos notificados, alertas, tendencias y analisis territorial.",
+    notificaciones: "Consulta del comportamiento general de eventos notificados, variaciones territoriales, tendencias y alertas epidemiologicas.",
+    "detalle-notificacion": "Consulta tecnica de la notificacion, variables principales y trazabilidad de validaciones.",
+    ficha: "Registro estandarizado de notificacion epidemiologica para eventos cronicos priorizados.",
+    validacion: "Control de consistencia, completitud, oportunidad y seguimiento de calidad del dato.",
+    soportes: "Repositorio institucional de soportes asociados a la notificacion.",
+    alertas: "Seguimiento poblacional de incrementos inusuales, concentracion territorial y retrasos de cargue.",
+    analitica: "Analisis agregado por territorio, tendencia semanal, mapas de calor y hallazgos automatizados.",
+    geovisor: "Exploracion conceptual del comportamiento territorial del evento piloto y sus alertas.",
+    reportes: "Generacion y consulta de boletines, consolidados y salidas en PDF o Excel.",
+    auditoria: "Trazabilidad de acciones sobre notificaciones, configuraciones y procesos analiticos.",
+    usuarios: "Administracion de perfiles institucionales, roles y responsabilidades operativas.",
+    configuracion: "Gestion de eventos, variables, umbrales y reglas base de vigilancia.",
+    "analisis-ia": "Lectura automatica de patrones, prediccion de comportamiento y priorizacion territorial.",
   };
 
-  const renderRoleSwitcher = () => (
-    <div className="flex flex-wrap gap-2 mb-6">
-      {[["medico", "Médico"], ["admin", "Administrador"], ["estudiante", "Estudiante"]].map(([id, label]) => (
-        <button key={id} onClick={() => { setRole(id); setViewState("dashboard"); setHistoryStack(["dashboard"]); }} className={cn("rounded-2xl px-4 py-2 text-sm font-medium border", role === id ? "bg-slate-950 text-white border-slate-950" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50")}>{label}</button>
-      ))}
-    </div>
-  );
+  const saveNotification = (form) => {
+    const nextId = `EV-${String(notifications.length + 1).padStart(4, "0")}`;
+    const comportamiento = form.comportamiento || "En observacion";
+    const territorio = `${form.municipio}, ${form.departamento}`;
 
-  const savePatient = (form) => {
-    const newPatient = {
-      id: `P-${String(patients.length + 1).padStart(4, "0")}`,
-      nm: `${form.nombres} ${form.apellidos}`.trim(),
-      doc: `${form.tipoDoc} ${form.numDoc}`,
-      ag: form.fechaNac ? new Date().getFullYear() - new Date(form.fechaNac).getFullYear() : 40,
-      sx: form.sexo,
-      dx: form.dx,
-      dp: form.depto,
-      mpio: form.mpio,
-      rk: form.riesgo || "medio",
-      st: "activo",
-      pe: form.peri,
-      eps: form.eps,
-      imc: Number(form.imc || 0),
-      peso: Number(form.peso || 0),
-      talla: Number(form.talla || 0),
-      antecedentes: form.antecedentes,
-      medicacion: form.meds,
+    const nextNotification = {
+      id: nextId,
+      evento: form.evento,
+      semana: form.semana,
+      territorio,
+      departamento: form.departamento,
+      municipio: form.municipio,
+      casos: Number(form.casos || 0),
+      variacion: form.variacion || "+0%",
+      comportamiento,
+      alerta: form.alerta || "Media",
+      unidad: form.unidad,
+      fechaNotificacion: form.fechaNotificacion,
+      fechaCorte: form.fechaNotificacion,
+      clasificacion: form.clasificacion || "Caso probable",
+      accion: comportamiento === "Incremento inusual" || comportamiento === "Posible brote" ? "Ver analisis" : "Ver detalle",
+      calidad: form.calidad || "94%",
+      sexo: form.sexo || "No aplica",
+      grupoEtario: form.grupoEtario || "No aplica",
+      aseguramiento: form.aseguramiento || "No informado",
+      hallazgos: [
+        `La notificacion ${nextId} queda disponible para analisis territorial del evento ${form.evento}.`,
+        `El territorio ${territorio} sera contrastado contra el promedio historico del corte ${form.semana}.`,
+        "Se recomienda cerrar validacion final antes del consolidado departamental.",
+      ],
+      variables: [
+        ["Casos notificados", String(form.casos || 0)],
+        ["Calidad del dato", form.calidad || "94%"],
+        ["Unidad notificadora", form.unidad],
+        ["Clasificacion", form.clasificacion || "Caso probable"],
+      ],
+      validaciones: [
+        { titulo: "Registro inicial", detalle: "Notificacion creada desde el modulo institucional.", estado: "Validada", fecha: `${form.fechaNotificacion} 09:00` },
+        { titulo: "Consistencia territorial", detalle: `Territorio asociado a ${territorio}.`, estado: "Validada", fecha: `${form.fechaNotificacion} 09:05` },
+        { titulo: "Revision de calidad", detalle: "Pendiente cierre de control analitico final.", estado: "En revision", fecha: `${form.fechaNotificacion} 09:12` },
+      ],
     };
-    setPatients((prev) => [newPatient, ...prev]);
-    setSelectedPatient(newPatient.id);
+
+    setNotifications((current) => [nextNotification, ...current]);
+    setSelectedNotificationId(nextId);
     setCreateOpen(false);
-    setView("patient-detail");
+    navigate("detalle-notificacion");
   };
 
   const appView = () => {
     switch (view) {
       case "dashboard":
-        return <><div>{renderRoleSwitcher()}</div><AppDashboard patients={patients} setView={setView} setSelectedPatient={setSelectedPatient} /></>;
-      case "pacientes":
-        return <PatientsView patients={patients} filter={patientFilter} setFilter={setPatientFilter} search={patientSearch} setSearch={setPatientSearch} onSelect={(id) => { setSelectedPatient(id); setView("patient-detail"); }} onCreate={() => setCreateOpen(true)} />;
-      case "patient-detail":
-      case "ia-clinica":
-        return <PatientDetailView patient={patient} setView={setView} />;
+        return (
+          <AppDashboard
+            notifications={notifications}
+            onSelect={openNotificationDetail}
+            onOpenForm={() => navigate("ficha")}
+            onOpenAnalytics={openAnalytics}
+            onOpenGeovisor={() => navigate("geovisor")}
+            role={role}
+            setRole={setRole}
+          />
+        );
+      case "notificaciones":
+        return <NotificationsView notifications={notifications} onSelect={openNotificationDetail} onCreate={() => setCreateOpen(true)} onAnalytics={openAnalytics} />;
+      case "detalle-notificacion":
+        return <NotificationDetailView notification={selectedNotification} openView={navigate} onBack={() => navigate("notificaciones")} />;
       case "ficha":
-        return <FichaView />;
-      case "documentos":
-        return <DocumentsView />;
+        return <NotificationFormView />;
+      case "validacion":
+        return <DataValidationView notifications={notifications} />;
+      case "soportes":
+        return <SupportFilesView />;
       case "alertas":
         return <AlertsView />;
       case "analitica":
         return <AnalyticsView />;
+      case "geovisor":
+        return <GeovisorView />;
       case "reportes":
         return <ReportsView />;
-      case "usuarios":
-        return <UsersView />;
       case "auditoria":
         return <AuditView />;
-      case "umbrales":
-        return <ThresholdsView thresholds={thresholds} setThresholds={setThresholds} />;
-      case "modulos":
-        return <ModulesView />;
-      case "ia-patrones":
-        return <IAPatternsView />;
-      case "ia-prediccion":
-        return <IAPredictionView />;
-      case "historial":
-        return <HistoryStudentView patients={patients} />;
-      case "recursos":
-        return <ResourcesView />;
+      case "usuarios":
+        return <UsersView />;
+      case "configuracion":
+        return <ConfigurationView />;
+      case "analisis-ia":
+        return <AIView />;
       default:
-        return <AppDashboard patients={patients} setView={setView} setSelectedPatient={setSelectedPatient} />;
+        return (
+          <AppDashboard
+            notifications={notifications}
+            onSelect={openNotificationDetail}
+            onOpenForm={() => navigate("ficha")}
+            onOpenAnalytics={openAnalytics}
+            onOpenGeovisor={() => navigate("geovisor")}
+            role={role}
+            setRole={setRole}
+          />
+        );
     }
   };
 
   if (mode === "public") {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#F8FAFC]">
         <PublicView tab={publicTab} setTab={setPublicTab} />
-        <button onClick={() => setMode("app")} className="fixed bottom-6 right-6 rounded-full bg-slate-950 text-white px-5 py-3 shadow-lg">Volver</button>
+        <button onClick={() => setMode("app")} className="fixed bottom-6 right-6 rounded-full bg-slate-950 px-5 py-3 text-white shadow-lg">
+          Volver
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
       <div className="flex min-h-screen">
-        <Sidebar role={role} view={view} setView={setView} />
-        <main className="flex-1 min-w-0">
-          <TopBar title={titleMap[view]} subtitle={subtitleMap[view]} role={role === "medico" ? "Dra. María González" : role === "admin" ? "Dr. Roberto Herrera" : "Carlos Vega"} onPublic={() => setMode("public")} onApp={() => setMode("app")} currentMode="app" />
-          <div className="px-5 lg:px-8 pt-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <Sidebar view={view} setView={navigate} profile={profile} />
+        <main className="min-w-0 flex-1">
+          <TopBar
+            title={titleMap[view]}
+            subtitle={subtitleMap[view]}
+            profile={profile}
+            currentMode="app"
+            onPublic={() => setMode("public")}
+            onApp={() => setMode("app")}
+          />
+          <CompactNav view={view} setView={navigate} />
+
+          <div className="px-5 pt-5 lg:px-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
               <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span className="text-slate-900 font-medium">PMEC · Plataforma institucional</span>
-                <ChevronRight className="w-4 h-4" />
-                <span className="capitalize">{titleMap[view]}</span>
+                <span className="font-medium text-slate-900">PMEC · Observatorio institucional</span>
+                <ChevronRight className="h-4 w-4" />
+                <span>{titleMap[view]}</span>
               </div>
-              <button onClick={goBack} disabled={historyStack.length <= 1} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed">Volver atrás</button>
+              <button
+                onClick={goBack}
+                disabled={historyStack.length <= 1}
+                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Volver atras
+              </button>
             </div>
           </div>
+
           <div className="p-5 lg:p-8">{appView()}</div>
         </main>
       </div>
-      <CreatePatientModal open={createOpen} onClose={() => setCreateOpen(false)} onSave={savePatient} />
+
+      <CreateNotificationModal open={createOpen} onClose={() => setCreateOpen(false)} onSave={saveNotification} />
     </div>
   );
 }
