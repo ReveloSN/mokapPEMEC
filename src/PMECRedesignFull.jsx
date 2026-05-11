@@ -1,4 +1,4 @@
-import React, { startTransition, useDeferredValue, useMemo, useState } from "react";
+import React, { startTransition, useDeferredValue, useMemo, useState, useCallback } from "react";
 import {
   Activity,
   AlertTriangle as TriangleAlert,
@@ -28,6 +28,13 @@ import {
   Users,
   Brain,
 } from "lucide-react";
+import HeaderPortal from "./components/layout/HeaderPortal";
+import MicrodatosView from "./components/views/MicrodatosView";
+import PublicationsView from "./components/views/PublicationsView";
+import StatisticalOpView from "./components/views/StatisticalOpView";
+import ReferenceTablesView from "./components/views/ReferenceTablesView";
+import ReportsGraphView from "./components/views/ReportsGraphView";
+import publicHeroImage from "./assets/public-hero-epidemiology.png";
 
 const monthLabels = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 const dashboardWeekLabels = ["SE 37", "SE 38", "SE 39", "SE 40", "SE 41", "SE 42"];
@@ -452,6 +459,8 @@ const eventConfigSeed = [
 ];
 
 const publicTabs = [
+  { id: "inicio", label: "Inicio" },
+  { id: "articulos", label: "Artículos" },
   { id: "indicadores", label: "Indicadores" },
   { id: "mapa", label: "Mapa de calor" },
   { id: "tendencias", label: "Tendencias" },
@@ -1998,77 +2007,176 @@ function AIView() {
   );
 }
 
-function PublicView({ tab, setTab }) {
+function PublicView({ tab, setTab, onLogin }) {
   const max = Math.max(...departments.map((department) => department.c));
   const top = [...departments].sort((a, b) => b.c - a.c).slice(0, 8);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="border-b border-slate-200 bg-[#10263f] px-6 py-4 text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+      {/* Header section */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-300 text-lg font-bold text-slate-950">P</div>
+            <div className="h-9 w-9 rounded-lg bg-[#0f2942] flex items-center justify-center text-white font-bold text-sm">P</div>
             <div>
-              <div className="text-lg font-semibold tracking-tight">Observatorio PMEC</div>
-              <div className="text-xs text-slate-300">Datos agregados de vigilancia epidemiologica de enfermedades cronicas</div>
+              <div className="font-bold text-slate-900 text-lg tracking-tight leading-none">PMEC</div>
+              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold mt-0.5">Observatorio Institucional</div>
             </div>
           </div>
-          <div className="hidden items-center gap-3 text-xs text-slate-300 lg:flex">
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Actualizacion: Nov 2024</span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Fuente institucional</span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Datos anonimizados</span>
+          
+          <div className="flex items-center gap-4">
+            <div className="relative hidden md:block w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input type="text" placeholder="Buscar información..." className="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-[#10263f] text-sm font-medium" />
+            </div>
+            <button onClick={onLogin} className="bg-[#10263f] text-white hover:bg-slate-800 px-5 py-2.5 rounded-xl transition text-sm font-medium shadow-sm flex items-center gap-2">
+              <User className="w-4 h-4" /> Iniciar Sesión
+            </button>
           </div>
         </div>
       </div>
 
-      <section className="border-b border-slate-200 bg-white px-6 py-14">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 xl:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            <div className="mb-5 inline-flex rounded-full border border-cyan-100 bg-cyan-50 px-4 py-1.5 text-xs font-medium text-cyan-800">
-              Observatorio de salud publica
-            </div>
-            <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950">
-              Vigilancia publica de enfermedades cronicas con enfoque territorial, preventivo y epidemiologico.
-            </h1>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
-              Consulta indicadores agregados, tendencias, mapas, geovisor conceptual y boletines institucionales sin exponer informacion personal.
-            </p>
+      {/* Hero Dashboard Section */}
+      <section data-testid="public-hero" className="relative isolate overflow-hidden bg-[#0b1b2d]">
+        <img
+          src={publicHeroImage}
+          alt="Mapa epidemiologico y tablero de vigilancia PMEC"
+          className="pointer-events-none absolute bottom-0 right-0 z-0 hidden h-full max-h-[420px] w-[58%] object-contain object-right-bottom opacity-95 lg:block"
+        />
+        <div className="absolute inset-0 z-0 bg-gradient-to-r from-[#0b1b2d] via-[#0b1b2d]/92 to-[#0b1b2d]/42" />
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent" />
+        
+        <div className="relative z-10 mx-auto max-w-7xl px-6 py-14 lg:py-20">
+          <div className="mb-10 flex flex-wrap gap-2">
+            {publicTabs.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setTab(item.id)}
+                className={cn(
+                  "whitespace-nowrap rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
+                  tab === item.id
+                    ? "border-teal-300 bg-teal-300 text-slate-950"
+                    : "border-white/15 bg-white/5 text-slate-200 hover:border-white/30 hover:bg-white/10",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              ["Notificaciones agregadas", "18,942"],
-              ["Cobertura territorial", "32 departamentos"],
-              ["Evento piloto", "Falla cardiaca"],
-              ["Calidad del dato", "94%"],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
-                <div className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</div>
-                <div className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{value}</div>
-              </div>
-            ))}
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-[1.15]">
+              Vigilancia Epidemiológica de <br />
+              <span className="text-teal-400">Enfermedades Crónicas</span>
+            </h1>
+            <p className="mt-5 text-base text-slate-300 leading-relaxed max-w-xl">
+              Sistema de vigilancia poblacional para enfermedades crónicas, orientado a la notificación, validación, análisis territorial y generación de reportes.
+            </p>
           </div>
         </div>
       </section>
 
-      <div className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-6 py-3">
-          {publicTabs.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setTab(item.id)}
-              className={cn(
-                "whitespace-nowrap rounded-2xl border px-4 py-2 text-sm font-medium",
-                tab === item.id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="mx-auto max-w-7xl space-y-8 px-6 py-8">
+        {tab === "inicio" ? (
+          <>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 bg-white p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 bg-teal-50 text-teal-700 rounded-lg"><Activity className="w-5 h-5" /></div>
+                  <div className="text-sm font-medium text-slate-500">Volumen de Notificaciones</div>
+                </div>
+                <div className="text-3xl font-bold text-slate-900 tracking-tight">18,942</div>
+                <div className="mt-1 text-sm text-teal-700 font-medium">+11.8% variacion semanal</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 bg-cyan-50 text-cyan-700 rounded-lg"><Map className="w-5 h-5" /></div>
+                  <div className="text-sm font-medium text-slate-500">Cobertura Territorial</div>
+                </div>
+                <div className="text-3xl font-bold text-slate-900 tracking-tight">32</div>
+                <div className="mt-1 text-sm text-slate-500">Departamentos activos</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-lg"><CheckCircle2 className="w-5 h-5" /></div>
+                  <div className="text-sm font-medium text-slate-500">Calidad del Dato</div>
+                </div>
+                <div className="text-3xl font-bold text-slate-900 tracking-tight">94%</div>
+                <div className="mt-1 text-sm text-slate-500">Completitud promedio</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.04fr_0.96fr]">
+              <div className="rounded-xl border border-slate-200 bg-white p-6">
+                <h3 className="text-lg font-semibold text-slate-900">Resumen institucional</h3>
+                <p className="mt-2 text-sm text-slate-500 leading-relaxed">Sistema de vigilancia poblacional para enfermedades cronicas, orientado a la notificacion, validacion, analisis territorial y generacion de reportes.</p>
+                <div className="mt-5 grid grid-cols-2 gap-4">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider font-medium">Evento piloto</div>
+                    <div className="mt-2 text-base font-semibold text-slate-900">Falla cardiaca</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider font-medium">Semana de corte</div>
+                    <div className="mt-2 text-base font-semibold text-slate-900">SE 42 · 2024</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider font-medium">Variacion semanal</div>
+                    <div className="mt-2 text-base font-semibold text-slate-900">+11.8%</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider font-medium">Cobertura</div>
+                    <div className="mt-2 text-base font-semibold text-slate-900">842 municipios</div>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-6">
+                <h3 className="text-lg font-semibold text-slate-900">Recursos para consulta publica</h3>
+                <div className="mt-5 space-y-3">
+                  {publicResources.map(([title, description]) => (
+                    <div key={title} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                      <div className="font-medium text-slate-900 text-sm">{title}</div>
+                      <div className="mt-1 text-xs text-slate-500 leading-relaxed">{description}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        ) : null}
+
+        {tab === "articulos" ? (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Articulos y noticias</h3>
+              <p className="mt-1 text-sm text-slate-500">Publicaciones recientes, boletines epidemiologicos y noticias del observatorio.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {[
+                {t:"Boletin epidemiologico ECNT - Semana 42",d:"Resumen semanal del comportamiento de eventos cronicos notificados en el departamento de Narino.",f:"15 Nov 2024",tipo:"Boletin",c:"bg-cyan-600"},
+                {t:"Informe trimestral de falla cardiaca Q3-2024",d:"Analisis del comportamiento territorial, tendencias y calidad del dato para el evento piloto.",f:"30 Sep 2024",tipo:"Informe",c:"bg-teal-600"},
+                {t:"Ficha tecnica - Vigilancia de ECNT",d:"Documento metodologico con definiciones operativas, fuentes y flujos de informacion.",f:"01 Ago 2024",tipo:"Ficha tecnica",c:"bg-slate-500"},
+                {t:"Lineamiento para unidades UPGD",d:"Guia operativa para el diligenciamiento y cargue de fichas de notificacion.",f:"15 Jul 2024",tipo:"Lineamiento",c:"bg-amber-500"},
+                {t:"Publicacion del semillero PEMEC - Vol. 1",d:"Primera entrega academica del semillero de investigacion sobre vigilancia de cronicas.",f:"01 Jun 2024",tipo:"Academico",c:"bg-violet-600"},
+                {t:"Protocolo de vigilancia de diabetes tipo 2",d:"Marco de referencia para la vigilancia poblacional de diabetes en el territorio.",f:"15 May 2024",tipo:"Protocolo",c:"bg-emerald-600"},
+              ].map((a) => (
+                <div key={a.t} className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col">
+                  <div className={cn("h-2", a.c)} />
+                  <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600">{a.tipo}</span>
+                      <span className="text-xs text-slate-400">{a.f}</span>
+                    </div>
+                    <h4 className="text-sm font-semibold text-slate-900 leading-snug">{a.t}</h4>
+                    <p className="mt-2 text-xs text-slate-500 leading-relaxed flex-1">{a.d}</p>
+                    <button className="mt-4 flex items-center gap-1 text-sm font-medium text-[#0f2942] hover:underline">
+                      Ver publicacion <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {tab === "indicadores" ? (
           <>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -2078,6 +2186,41 @@ function PublicView({ tab, setTab }) {
               <KpiCard title="Calidad del dato" value="94%" subtitle="Notificacion valida" icon={CheckCircle2} accent="slate" />
               <KpiCard title="Corte" value="Nov 2024" subtitle="Actualizacion" icon={CalendarDays} accent="teal" />
             </div>
+
+            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-semibold tracking-tight text-slate-950">Lectura rapida del corte</h3>
+                  <p className="mt-1 text-sm text-slate-500">Senales principales para interpretar los indicadores agregados del periodo publico.</p>
+                </div>
+                <span className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700">
+                  Semaforo epidemiologico
+                </span>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {[
+                  ["Semaforo epidemiologico", "En observacion", "Variacion semanal por encima del promedio reciente.", TriangleAlert, "border-amber-100 bg-amber-50 text-amber-700"],
+                  ["Tendencia nacional", "+11.8%", "Aumento moderado en el agregado semanal.", Activity, "border-cyan-100 bg-cyan-50 text-cyan-700"],
+                  ["Cobertura territorial", "842 municipios", "Registros agregados con cobertura nacional activa.", Map, "border-emerald-100 bg-emerald-50 text-emerald-700"],
+                  ["Prioridad territorial", "Pasto y Tuquerres", "Territorios con seguimiento publico destacado.", Gauge, "border-rose-100 bg-rose-50 text-rose-700"],
+                ].map(([label, value, detail, Icon, tone]) => (
+                  <div key={label} className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border", tone)}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</div>
+                        <div className="mt-1 text-base font-semibold text-slate-950">{value}</div>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.04fr_0.96fr]">
               <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
                 <h3 className="text-xl font-semibold tracking-tight text-slate-950">Resumen publico</h3>
@@ -2161,29 +2304,60 @@ function PublicView({ tab, setTab }) {
         ) : null}
 
         {tab === "tendencias" ? (
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-              <h3 className="text-xl font-semibold tracking-tight text-slate-950">Tendencia mensual</h3>
-              <div className="mt-6">
-                <MiniTrendChart values={[1120, 1240, 1180, 1350, 1420, 1510, 1480, 1560, 1620, 1580, 1640, 1710]} labels={monthLabels} tone="slate" tall />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <h3 className="text-xl font-semibold tracking-tight text-slate-950">Tendencia mensual</h3>
+                <div className="mt-6">
+                  <MiniTrendChart values={[1120, 1240, 1180, 1350, 1420, 1510, 1480, 1560, 1620, 1580, 1640, 1710]} labels={monthLabels} tone="slate" tall />
+                </div>
+              </div>
+              <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <h3 className="text-xl font-semibold tracking-tight text-slate-950">Comparacion interanual</h3>
+                <div className="mt-5 space-y-4">
+                  {[
+                    ["2022", 1120],
+                    ["2023", 1380],
+                    ["2024", 1710],
+                  ].map(([year, value]) => (
+                    <div key={year}>
+                      <div className="mb-2 flex justify-between text-sm">
+                        <span className="text-slate-600">{year}</span>
+                        <span className="font-medium text-slate-950">{value}</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full bg-[#10263f]" style={{ width: `${(value / 1710) * 100}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+
             <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-              <h3 className="text-xl font-semibold tracking-tight text-slate-950">Comparacion interanual</h3>
-              <div className="mt-5 space-y-4">
-                {[
-                  ["2022", 1120],
-                  ["2023", 1380],
-                  ["2024", 1710],
-                ].map(([year, value]) => (
-                  <div key={year}>
-                    <div className="mb-2 flex justify-between text-sm">
-                      <span className="text-slate-600">{year}</span>
-                      <span className="font-medium text-slate-950">{value}</span>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <TriangleAlert className="h-4 w-4 text-orange-600" />
+                    Alertas epidemiologicas
+                  </div>
+                  <p className="mt-1 text-sm text-slate-500">Seguimiento agregado de incrementos, concentraciones y oportunidad de notificacion.</p>
+                </div>
+                <span className="rounded-lg border border-orange-100 bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700">
+                  {alertsSeed.length} activas
+                </span>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                {alertsSeed.map((alert) => (
+                  <div key={`${alert.evento}-${alert.territorio}`} className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={cn("rounded-full border px-3 py-1 text-xs font-medium", alertClasses(alert.nivel))}>{alert.nivel}</span>
+                      <span className="text-xs font-medium text-slate-500">{alert.evento} · {alert.semana}</span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div className="h-full rounded-full bg-[#10263f]" style={{ width: `${(value / 1710) * 100}%` }} />
-                    </div>
+                    <div className="mt-3 text-sm font-semibold text-slate-900">{alert.territorio}</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{alert.mensaje}</p>
+                    <div className="mt-3 text-xs font-medium text-slate-500">{alert.tipo}</div>
                   </div>
                 ))}
               </div>
@@ -2371,16 +2545,24 @@ function CreateNotificationModal({ open, onClose, onSave }) {
 
 export default function PMECRedesignFull() {
   const [historyStack, setHistoryStack] = useState(["dashboard"]);
-  const [mode, setMode] = useState("app");
+  const [mode, setMode] = useState("public");
   const [role, setRole] = useState("epidemiologo");
   const [view, setViewState] = useState("dashboard");
-  const [publicTab, setPublicTab] = useState("indicadores");
+  const [publicTab, setPublicTab] = useState("inicio");
   const [notifications, setNotifications] = useState(eventNotificationsSeed);
   const [selectedNotificationId, setSelectedNotificationId] = useState("EV-0001");
   const [createOpen, setCreateOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastVisible, setToastVisible] = useState(false);
 
   const profile = roleProfiles[role];
   const selectedNotification = notifications.find((item) => item.id === selectedNotificationId) || notifications[0];
+
+  const showToast = useCallback((msg) => {
+    setToastMsg(msg);
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), 2500);
+  }, []);
 
   const navigate = (nextView) => {
     startTransition(() => {
@@ -2410,19 +2592,24 @@ export default function PMECRedesignFull() {
 
   const titleMap = {
     dashboard: "Dashboard de vigilancia epidemiologica",
-    notificaciones: "Notificaciones",
+    notificaciones: "Eventos notificados",
     "detalle-notificacion": "Detalle de notificacion",
     ficha: "Ficha de notificacion",
     validacion: "Validacion de datos",
     soportes: "Soportes de notificacion",
     alertas: "Alertas epidemiologicas",
     analitica: "Analitica territorial",
-    geovisor: "Geovisor",
+    geovisor: "GeoVisor",
     reportes: "Reportes",
+    "reportes-graficos": "Reportes graficos",
     auditoria: "Auditoria",
     usuarios: "Usuarios y roles",
-    configuracion: "Configuracion de eventos",
-    "analisis-ia": "Analisis epidemiologico IA",
+    configuracion: "Administracion",
+    "analisis-ia": "Analisis epidemiologico",
+    microdatos: "Microdatos",
+    publicaciones: "Publicaciones",
+    "operacion-estadistica": "Operacion estadistica",
+    "tablas-referencia": "Tablas de referencia",
   };
 
   const subtitleMap = {
@@ -2436,10 +2623,15 @@ export default function PMECRedesignFull() {
     analitica: "Analisis agregado por territorio, tendencia semanal, mapas de calor y hallazgos automatizados.",
     geovisor: "Exploracion conceptual del comportamiento territorial del evento piloto y sus alertas.",
     reportes: "Generacion y consulta de boletines, consolidados y salidas en PDF o Excel.",
+    "reportes-graficos": "Dashboard de visualizacion con indicadores, graficas y filtros institucionales.",
     auditoria: "Trazabilidad de acciones sobre notificaciones, configuraciones y procesos analiticos.",
     usuarios: "Administracion de perfiles institucionales, roles y responsabilidades operativas.",
     configuracion: "Gestion de eventos, variables, umbrales y reglas base de vigilancia.",
     "analisis-ia": "Lectura automatica de patrones, prediccion de comportamiento y priorizacion territorial.",
+    microdatos: "Consulta y descarga de registros anonimizados de eventos notificados.",
+    publicaciones: "Boletines epidemiologicos, informes, fichas tecnicas y lineamientos.",
+    "operacion-estadistica": "Metodologia, fuentes de informacion y criterios de calidad del dato.",
+    "tablas-referencia": "Catalogos estandarizados de eventos, territorios y variables.",
   };
 
   const saveNotification = (form) => {
@@ -2488,6 +2680,7 @@ export default function PMECRedesignFull() {
     setNotifications((current) => [nextNotification, ...current]);
     setSelectedNotificationId(nextId);
     setCreateOpen(false);
+    showToast(`Notificacion ${nextId} creada exitosamente`);
     navigate("detalle-notificacion");
   };
 
@@ -2523,6 +2716,8 @@ export default function PMECRedesignFull() {
         return <GeovisorView />;
       case "reportes":
         return <ReportsView />;
+      case "reportes-graficos":
+        return <ReportsGraphView showToast={showToast} />;
       case "auditoria":
         return <AuditView />;
       case "usuarios":
@@ -2531,6 +2726,14 @@ export default function PMECRedesignFull() {
         return <ConfigurationView />;
       case "analisis-ia":
         return <AIView />;
+      case "microdatos":
+        return <MicrodatosView showToast={showToast} />;
+      case "publicaciones":
+        return <PublicationsView showToast={showToast} />;
+      case "operacion-estadistica":
+        return <StatisticalOpView showToast={showToast} />;
+      case "tablas-referencia":
+        return <ReferenceTablesView showToast={showToast} />;
       default:
         return (
           <AppDashboard
@@ -2549,51 +2752,57 @@ export default function PMECRedesignFull() {
   if (mode === "public") {
     return (
       <div className="min-h-screen bg-[#F8FAFC]">
-        <PublicView tab={publicTab} setTab={setPublicTab} />
-        <button onClick={() => setMode("app")} className="fixed bottom-6 right-6 rounded-full bg-slate-950 px-5 py-3 text-white shadow-lg">
-          Volver
-        </button>
+        <PublicView tab={publicTab} setTab={setPublicTab} onLogin={() => setMode("app")} />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
-      <div className="flex min-h-screen">
+      <HeaderPortal
+        profile={profile}
+        onPublic={() => setMode("public")}
+        mode="app"
+      />
+
+      <div className="flex">
         <Sidebar view={view} setView={navigate} profile={profile} />
         <main className="min-w-0 flex-1">
-          <TopBar
-            title={titleMap[view]}
-            subtitle={subtitleMap[view]}
-            profile={profile}
-            currentMode="app"
-            onPublic={() => setMode("public")}
-            onApp={() => setMode("app")}
-          />
-          <CompactNav view={view} setView={navigate} />
-
-          <div className="px-5 pt-5 lg:px-8">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="px-5 pt-4 lg:px-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5">
               <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span className="font-medium text-slate-900">PMEC · Observatorio institucional</span>
-                <ChevronRight className="h-4 w-4" />
-                <span>{titleMap[view]}</span>
+                <span className="font-medium text-slate-900">PMEC</span>
+                <ChevronRight className="h-3 w-3" />
+                <span>{titleMap[view] || view}</span>
               </div>
               <button
                 onClick={goBack}
                 disabled={historyStack.length <= 1}
-                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Volver atras
+                Volver
               </button>
             </div>
           </div>
 
-          <div className="p-5 lg:p-8">{appView()}</div>
+          <div className="px-5 pt-4 pb-2 lg:px-8">
+            <h1 className="text-xl font-bold text-slate-900">{titleMap[view] || view}</h1>
+            <p className="mt-1 text-sm text-slate-500">{subtitleMap[view] || ""}</p>
+          </div>
+
+          <div className="p-5 lg:px-8 lg:pb-8">{appView()}</div>
         </main>
       </div>
 
       <CreateNotificationModal open={createOpen} onClose={() => setCreateOpen(false)} onSave={saveNotification} />
+
+      {toastVisible && (
+        <div className="fixed bottom-6 right-6 z-[100]">
+          <div className="toast-enter rounded-lg bg-slate-800 px-5 py-3 text-sm font-medium text-white shadow-lg">
+            {toastMsg}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
